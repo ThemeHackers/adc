@@ -5,5 +5,7 @@ coverage/
 .turbo/
 *.log
 *.pdf
+*.json
+*.csv
 Thumbs.db
 .DS_Store

@@ -2,24 +2,19 @@
 
 import React from 'react';
 import { FileText, Download, Calendar } from 'lucide-react';
+import { SimulationStatistics } from '@/lib/dataLogger';
+import { SimulationConfig } from '@/components/ConfigurationPanel';
 
 interface ReportGeneratorProps {
-  statistics: {
-    totalTime: number;
-    totalEnergyGenerated: number;
-    totalImpacts: number;
-    maxSoilCompaction: number;
-    avgGeneratorPower: number;
-  };
-  config: any;
+  statistics: SimulationStatistics;
+  config: SimulationConfig;
   onGenerateReport: () => void;
 }
 
 export default function ReportGenerator({ statistics, config, onGenerateReport }: ReportGeneratorProps) {
-  const [isMounted, setIsMounted] = React.useState(false);
-  
+  const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
   
   const generatePDFReport = () => {
@@ -35,20 +30,27 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
       margin: 0 auto;
       padding: 20px;
       line-height: 1.6;
+      background: #0f172a;
+      color: #f8fafc;
     }
     .header {
       text-align: center;
-      border-bottom: 2px solid #333;
+      border-bottom: 2px solid #334155;
       padding-bottom: 20px;
       margin-bottom: 30px;
     }
     .section {
       margin-bottom: 30px;
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #334155;
     }
     .section h2 {
-      color: #333;
-      border-bottom: 1px solid #ccc;
+      color: #38bdf8;
+      border-bottom: 1px solid #334155;
       padding-bottom: 10px;
+      margin-top: 0;
     }
     .stat-grid {
       display: grid;
@@ -57,19 +59,23 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
       margin: 20px 0;
     }
     .stat-item {
-      background: #f5f5f5;
+      background: #0f172a;
       padding: 15px;
       border-radius: 8px;
+      border: 1px solid #334155;
     }
     .stat-label {
       font-weight: bold;
-      color: #666;
-      font-size: 14px;
+      color: #94a3b8;
+      font-size: 13px;
+      text-transform: uppercase;
+      tracking-wide: 0.05em;
     }
     .stat-value {
       font-size: 24px;
-      color: #333;
+      color: #f8fafc;
       margin-top: 5px;
+      font-family: monospace;
     }
     .config-table {
       width: 100%;
@@ -77,19 +83,23 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
       margin: 20px 0;
     }
     .config-table th, .config-table td {
-      border: 1px solid #ddd;
+      border: 1px solid #334155;
       padding: 12px;
       text-align: left;
     }
     .config-table th {
-      background: #f5f5f5;
+      background: #0f172a;
+      color: #94a3b8;
+    }
+    .config-table td {
+      color: #cbd5e1;
     }
     .footer {
       text-align: center;
       margin-top: 40px;
       padding-top: 20px;
-      border-top: 1px solid #ccc;
-      color: #666;
+      border-top: 1px solid #334155;
+      color: #64748b;
       font-size: 12px;
     }
   </style>
@@ -113,8 +123,28 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
         <div class="stat-value">${(statistics.totalEnergyGenerated / 1000).toFixed(2)} kJ</div>
       </div>
       <div class="stat-item">
+        <div class="stat-label">Estimated Energy Value</div>
+        <div class="stat-value">฿${statistics.estimatedEnergyValueTHB.toFixed(2)}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Net Energy Balance</div>
+        <div class="stat-value">${(statistics.netEnergy / 1000).toFixed(2)} kJ</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Estimated Electricity Bill</div>
+        <div class="stat-value">฿${statistics.estimatedConsumptionCostTHB.toFixed(2)}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Estimated Net Value</div>
+        <div class="stat-value">฿${statistics.estimatedNetValueTHB.toFixed(2)}</div>
+      </div>
+      <div class="stat-item">
         <div class="stat-label">Total Impacts</div>
         <div class="stat-value">${statistics.totalImpacts}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Impact Rate</div>
+        <div class="stat-value">${statistics.impactRate.toFixed(2)} impacts/min</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Max Soil Compaction</div>
@@ -125,10 +155,15 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
         <div class="stat-value">${statistics.avgGeneratorPower.toFixed(2)} W</div>
       </div>
       <div class="stat-item">
+        <div class="stat-label">Battery Stability</div>
+        <div class="stat-value">${statistics.batteryStabilityIndex.toFixed(1)}%</div>
+      </div>
+      <div class="stat-item">
         <div class="stat-label">Final Soil Density</div>
-        <div class="stat-value">${(config.initialSoilDensity + statistics.maxSoilCompaction * 4).toFixed(0)} kg/m³</div>
+        <div class="stat-value">${statistics.finalSoilDensity.toFixed(0)} kg/m³</div>
       </div>
     </div>
+    <p style="color:#94a3b8;font-size:12px;margin-top:10px;">Energy-to-money conversion uses the ERC large-business average tariff of ฿${statistics.electricityRateTHBPerKWh.toFixed(2)} per kWh and applies it to total system usage (motor + load).</p>
   </div>
 
   <div class="section">
@@ -195,44 +230,51 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
   };
   
   return (
-    <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-200">
+    <div className="cyber-glass rounded-2xl p-5 shadow-2xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <FileText className="w-6 h-6 text-purple-600" />
+          <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg text-purple-400">
+            <FileText className="w-5 h-5" />
           </div>
-          <h3 className="font-semibold text-gray-700">Generate Report</h3>
+          <div>
+            <h3 className="font-bold text-slate-200 text-sm tracking-wide">Generate Report</h3>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Analysis Engine</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Calendar className="w-4 h-4" />
-          {isMounted ? new Date().toLocaleDateString() : ''}
+        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium bg-slate-950/40 border border-slate-800/80 px-2.5 py-1.5 rounded-xl">
+          <Calendar className="w-4 h-4 text-purple-400" />
+          {mounted ? new Date().toLocaleDateString() : ''}
         </div>
       </div>
       
       <div className="space-y-3 mb-4">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-gray-500">Total Time</div>
-            <div className="text-lg font-bold text-gray-900">{statistics.totalTime.toFixed(1)}s</div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Time</div>
+            <div className="text-base font-bold text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{statistics.totalTime.toFixed(1)}s</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-gray-500">Energy Generated</div>
-            <div className="text-lg font-bold text-gray-900">{(statistics.totalEnergyGenerated / 1000).toFixed(1)} kJ</div>
+          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Energy Gen</div>
+            <div className="text-base font-bold text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{(statistics.totalEnergyGenerated / 1000).toFixed(1)} kJ</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-gray-500">Total Impacts</div>
-            <div className="text-lg font-bold text-gray-900">{statistics.totalImpacts}</div>
+          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Impacts</div>
+            <div className="text-base font-bold text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{statistics.totalImpacts}</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-gray-500">Max Compaction</div>
-            <div className="text-lg font-bold text-gray-900">{statistics.maxSoilCompaction.toFixed(1)}%</div>
+          <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Max Compaction</div>
+            <div className="text-base font-bold text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{statistics.maxSoilCompaction.toFixed(1)}%</div>
           </div>
+        </div>
+        <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
+          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Net Energy Balance</div>
+          <div className="text-base font-bold text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{(statistics.netEnergy / 1000).toFixed(1)} kJ</div>
         </div>
       </div>
       
       <button
         onClick={generatePDFReport}
-        className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-bold text-sm tracking-wider uppercase shadow-lg shadow-purple-500/10 cursor-pointer transition-all duration-300"
       >
         <Download className="w-5 h-5" />
         Download Report

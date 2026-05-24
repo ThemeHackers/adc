@@ -51,7 +51,7 @@ export interface Translations {
   systemState: string;
   
 
-  totalEnergy: string;
+  chartTotalEnergy: string;
   generatorPower: string;
   pendulumHeight: string;
   
@@ -62,7 +62,7 @@ export interface Translations {
   batterySystemConfig: string;
   saveConfiguration: string;
   resetToDefault: string;
-  pendulumMass: string;
+  pendulumMassConfig: string;
   maxHeight: string;
   gravity: string;
   initialSoilDensity: string;
@@ -145,7 +145,7 @@ export const translations: Record<Language, Translations> = {
     pendulumMass: 'มวลลูกตุ้ม',
     systemState: 'สถานะระบบ',
     
-    totalEnergy: 'พลังงานรวม',
+    chartTotalEnergy: 'พลังงานรวม',
     generatorPower: 'พลังงานเครื่องกำเนิดไฟ',
     pendulumHeight: 'ความสูงลูกตุ้ม',
     
@@ -155,7 +155,7 @@ export const translations: Record<Language, Translations> = {
     batterySystemConfig: 'ระบบแบตเตอรี่',
     saveConfiguration: 'บันทึกการตั้งค่า',
     resetToDefault: 'รีเซ็ตค่าเริ่มต้น',
-    pendulumMass: 'มวลลูกตุ้ม (kg)',
+    pendulumMassConfig: 'มวลลูกตุ้ม (kg)',
     maxHeight: 'ความสูงสูงสุด (m)',
     gravity: 'แรงโน้มถ่วง (m/s²)',
     initialSoilDensity: 'ความหนาแน่นดินเริ่มต้น (kg/m³)',
@@ -229,7 +229,7 @@ export const translations: Record<Language, Translations> = {
     pendulumMass: 'Pendulum Mass',
     systemState: 'System State',
     
-    totalEnergy: 'Total Energy',
+    chartTotalEnergy: 'Total Energy',
     generatorPower: 'Generator Power',
     pendulumHeight: 'Pendulum Height',
     
@@ -239,7 +239,7 @@ export const translations: Record<Language, Translations> = {
     batterySystemConfig: 'Battery System',
     saveConfiguration: 'Save Configuration',
     resetToDefault: 'Reset to Default',
-    pendulumMass: 'Pendulum Mass (kg)',
+    pendulumMassConfig: 'Pendulum Mass (kg)',
     maxHeight: 'Max Height (m)',
     gravity: 'Gravity (m/s²)',
     initialSoilDensity: 'Initial Soil Density (kg/m³)',

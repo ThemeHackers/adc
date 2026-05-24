@@ -6,7 +6,21 @@ interface PitVisualizationProps {
   height: number;
   state: string;
   soilCompaction: number;
+  soilDensity: number;
+  impactCount: number;
+  pendulumVelocity: number;
+  solarPower: number;
+  motorPower: number;
+  generatorPower: number;
+  loadPower: number;
+  batteryCapacity: number;
+  batteryVoltage: number;
+  batteryCurrent: number;
+  potentialEnergy: number;
+  kineticEnergy: number;
+  totalEnergy: number;
   viewMode?: '2d' | '3d';
+  pendulumMass: number;
   onPendulumClick?: () => void;
   onSoilClick?: () => void;
   onHeightClick?: () => void;
@@ -18,7 +32,21 @@ export default function PitVisualization({
   height, 
   state, 
   soilCompaction,
+  soilDensity,
+  impactCount,
+  pendulumVelocity,
+  solarPower,
+  motorPower,
+  generatorPower,
+  loadPower,
+  batteryCapacity,
+  batteryVoltage,
+  batteryCurrent,
+  potentialEnergy,
+  kineticEnergy,
+  totalEnergy,
   viewMode = '3d',
+  pendulumMass,
   onPendulumClick,
   onSoilClick,
   onHeightClick,
@@ -30,6 +58,7 @@ export default function PitVisualization({
   const clampedHeight = Math.max(0, Math.min(height, maxHeight));
   const heightRatio = clampedHeight / maxHeight;
   const compactedRatio = Math.max(0, Math.min(soilCompaction, 100)) / 100;
+  const batteryRatio = Math.max(0, Math.min(batteryCapacity, 100)) / 100;
   const sceneWidth = 1000;
   const sceneHeight = 580;
   const bobX = is3d ? 520 : 500;
@@ -38,39 +67,42 @@ export default function PitVisualization({
   const travelDistance = 240;
   const bobRadius = is3d ? 46 : 42;
   const bobY = groundY - (heightRatio * travelDistance);
-  const ropeBottomY = Math.max(topAnchorY + 18, bobY - bobRadius + (is3d ? 4 : 8));
   const soilSurfaceY = (is3d ? 414 : 408) - (compactedRatio * (is3d ? 118 : 110));
   const crackCount = Math.max(0, Math.min(6, Math.round(compactedRatio * 6)));
+
+  const cylinderHeight = bobRadius * 1.5;
+  const ryRatio = is3d ? 0.45 : 0.25;
+  const ropeBottomY = Math.max(topAnchorY + 18, bobY - cylinderHeight / 2);
 
   const stateMeta = (() => {
     switch (state) {
       case 'CHARGING':
         return {
           label: 'Charging',
-          color: '#22c55e',
-          glow: 'rgba(34, 197, 94, 0.35)',
-          accent: 'from-emerald-400 to-lime-400'
+          color: '#10b981',
+          glow: 'rgba(16, 185, 129, 0.25)',
+          accent: 'from-emerald-400 to-teal-400'
         };
       case 'DISCHARGING':
         return {
           label: 'Discharging',
           color: '#3b82f6',
-          glow: 'rgba(59, 130, 246, 0.35)',
+          glow: 'rgba(59, 130, 246, 0.25)',
           accent: 'from-sky-400 to-blue-400'
         };
       case 'IMPACT':
         return {
-          label: 'Impact',
-          color: '#ef4444',
-          glow: 'rgba(239, 68, 68, 0.4)',
+          label: 'Impact/DC',
+          color: '#f43f5e',
+          glow: 'rgba(244, 63, 94, 0.35)',
           accent: 'from-rose-400 to-red-500'
         };
       default:
         return {
           label: 'Idle',
-          color: '#94a3b8',
-          glow: 'rgba(148, 163, 184, 0.25)',
-          accent: 'from-slate-300 to-slate-500'
+          color: '#64748b',
+          glow: 'rgba(100, 116, 139, 0.15)',
+          accent: 'from-slate-400 to-slate-500'
         };
     }
   })();
@@ -78,12 +110,12 @@ export default function PitVisualization({
   const pendulumColor = stateMeta.color;
   
   return (
-    <div className={`relative flex h-full min-h-[640px] flex-col overflow-hidden rounded-2xl border text-white shadow-2xl ${is3d ? 'border-slate-200 bg-slate-950' : 'border-slate-300 bg-slate-900'}`}>
-      <div className={`absolute inset-0 ${is3d ? 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_32%),linear-gradient(180deg,#0f172a_0%,#0b1b2f_42%,#1f2937_100%)]' : 'bg-[radial-gradient(circle_at_top,rgba(125,211,252,0.16),transparent_30%),linear-gradient(180deg,#111827_0%,#172554_45%,#0f172a_100%)]'}`} />
-      <div className={`absolute inset-0 opacity-30 ${is3d ? 'bg-[linear-gradient(rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:40px_40px]' : 'bg-[linear-gradient(rgba(125,211,252,0.10)_1px,transparent_1px),linear-gradient(90deg,rgba(125,211,252,0.10)_1px,transparent_1px)] bg-[size:32px_32px]'}`} />
-      <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-sky-300/25 to-transparent" />
-
-      <div className="relative flex-[1.2] min-h-[420px]">
+    <div className={`relative flex h-auto flex-col rounded-2xl border text-slate-100 shadow-2xl cyber-glass border-slate-800 bg-slate-950/30 overflow-hidden`}>
+      {/* Background glow highlights */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ${is3d ? 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.08),transparent_40%)]' : 'bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.06),transparent_45%)]'}`} />
+      <div className="absolute inset-0 opacity-15 bg-[linear-gradient(rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:40px_40px]" />
+      
+      <div className="relative flex-[1.2] min-h-[320px] sm:min-h-[420px]">
         <svg
           viewBox={`0 0 ${sceneWidth} ${sceneHeight}`}
           className="absolute inset-0 h-full w-full"
@@ -92,74 +124,84 @@ export default function PitVisualization({
         >
         <defs>
           <linearGradient id="skyGradient" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.22" />
-            <stop offset="55%" stopColor="#0f172a" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#1e293b" stopOpacity="0" />
+            <stop offset="0%" stopColor="#0f172a" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#020617" stopOpacity="0.8" />
           </linearGradient>
           <linearGradient id="soilGradient" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#c08457" />
-            <stop offset="48%" stopColor="#8b5a2b" />
-            <stop offset="100%" stopColor="#5b3417" />
+            <stop offset="0%" stopColor="#78350f" />
+            <stop offset="48%" stopColor="#451a03" />
+            <stop offset="100%" stopColor="#1e0b00" />
           </linearGradient>
           <linearGradient id="compactedSoilGradient" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#8b5a2b" />
-            <stop offset="100%" stopColor="#42210b" />
+            <stop offset="0%" stopColor="#b45309" />
+            <stop offset="100%" stopColor="#451a03" />
           </linearGradient>
           <linearGradient id="ropeGradient" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#cbd5e1" />
-            <stop offset="100%" stopColor="#64748b" />
+            <stop offset="0%" stopColor="#94a3b8" />
+            <stop offset="100%" stopColor="#475569" />
           </linearGradient>
-          <linearGradient id="bobGradient" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor={pendulumColor} />
-            <stop offset="100%" stopColor="#0f172a" stopOpacity="0.35" />
+          <linearGradient id="cylinderBodyGradient" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor={pendulumColor} stopOpacity="0.95" />
+            <stop offset="25%" stopColor="#ffffff" stopOpacity="0.55" />
+            <stop offset="65%" stopColor={pendulumColor} />
+            <stop offset="100%" stopColor="#020617" stopOpacity="0.95" />
+          </linearGradient>
+          <linearGradient id="cylinderTopGradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+            <stop offset="100%" stopColor={pendulumColor} />
           </linearGradient>
           <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#020617" floodOpacity="0.5" />
+            <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#020617" floodOpacity="0.7" />
           </filter>
           <filter id="deepShadow" x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow dx="0" dy="18" stdDeviation="16" floodColor="#020617" floodOpacity="0.55" />
+            <feDropShadow dx="0" dy="18" stdDeviation="16" floodColor="#020617" floodOpacity="0.8" />
           </filter>
         </defs>
 
         <rect x="0" y="0" width={sceneWidth} height={sceneHeight} fill="url(#skyGradient)" />
 
-        <ellipse cx={is3d ? 540 : 500} cy="110" rx={is3d ? 110 : 92} ry={is3d ? 42 : 36} fill={stateMeta.glow} opacity="0.9" />
+        {/* Top Anchor Glow */}
+        <ellipse cx={is3d ? 540 : 500} cy="110" rx={is3d ? 110 : 92} ry={is3d ? 42 : 36} fill={stateMeta.glow} opacity="0.8" />
 
         {is3d && (
           <g opacity="0.9">
-            <path d="M 148 405 L 198 422 L 184 550 L 132 528 Z" fill="#5b3417" opacity="0.68" />
-            <path d="M 802 405 L 852 422 L 840 550 L 786 528 Z" fill="#2f1d0d" opacity="0.8" />
-            <path d="M 180 390 L 820 390 L 852 422 L 198 422 Z" fill="#f59e0b" opacity="0.12" />
+            <path d="M 148 405 L 198 422 L 184 550 L 132 528 Z" fill="#2d170b" opacity="0.68" />
+            <path d="M 802 405 L 852 422 L 840 550 L 786 528 Z" fill="#1e1106" opacity="0.8" />
+            <path d="M 180 390 L 820 390 L 852 422 L 198 422 Z" fill="#f59e0b" opacity="0.08" />
           </g>
         )}
 
+        {/* Soil shadow projection */}
         <path
           d={is3d ? 'M 120 394 L 880 394 L 840 446 L 160 446 Z' : 'M 120 392 L 880 392 L 820 440 L 180 440 Z'}
-          fill="#0f172a"
-          fillOpacity="0.2"
+          fill="#020617"
+          fillOpacity="0.5"
         />
 
+        {/* Geological layers (soil background) */}
         <path
           d={is3d ? 'M 160 388 L 840 388 L 800 548 L 200 548 Z' : 'M 180 390 L 820 390 L 780 548 L 220 548 Z'}
           fill="url(#soilGradient)"
-          opacity="0.96"
+          opacity="0.95"
         />
 
+        {/* Compacted Area overlay (glowing) */}
         {is3d ? (
           <>
             <path
               d={`M 200 ${soilSurfaceY} L 800 ${soilSurfaceY} L 774 548 L 226 548 Z`}
               fill="url(#compactedSoilGradient)"
-              opacity={0.58 + compactedRatio * 0.32}
+              opacity={0.3 + compactedRatio * 0.5}
             />
+            {/* Edge highlights for 3D depth */}
             <path
               d={`M 800 ${soilSurfaceY} L 844 ${soilSurfaceY + 22} L 818 548 L 774 548 Z`}
-              fill="#3f230f"
+              fill="#2d1303"
               opacity="0.8"
             />
             <path
               d={`M 200 ${soilSurfaceY} L 174 ${soilSurfaceY + 18} L 200 548 L 226 548 Z`}
-              fill="#6b3f1f"
+              fill="#542005"
               opacity="0.8"
             />
           </>
@@ -167,25 +209,28 @@ export default function PitVisualization({
           <path
             d={`M 220 ${soilSurfaceY} L 780 ${soilSurfaceY} L 760 548 L 240 548 Z`}
             fill="url(#compactedSoilGradient)"
-            opacity={0.55 + compactedRatio * 0.35}
+            opacity={0.3 + compactedRatio * 0.5}
           />
         )}
 
+        {/* Glowing soil surface outline */}
         <path
-          d={is3d ? 'M 160 388 L 840 388' : 'M 180 390 L 820 390'}
-          stroke="#f8fafc"
-          strokeOpacity="0.5"
-          strokeWidth="4"
+          d={is3d ? `M 200 ${soilSurfaceY} L 800 ${soilSurfaceY}` : `M 220 ${soilSurfaceY} L 780 ${soilSurfaceY}`}
+          stroke="#f59e0b"
+          strokeOpacity={0.15 + compactedRatio * 0.45}
+          strokeWidth="3.5"
+          style={{ filter: `drop-shadow(0 0 4px rgba(245,158,11, ${0.2 + compactedRatio * 0.6}))` }}
         />
 
+        {/* Original baseline outline */}
         <path
-          d={is3d ? 'M 200 388 L 800 388 L 774 548 L 226 548 Z' : 'M 220 390 L 780 390 L 760 548 L 240 548 Z'}
-          fill="none"
-          stroke="#facc15"
-          strokeOpacity={0.2 + compactedRatio * 0.15}
+          d={is3d ? 'M 160 388 L 840 388' : 'M 180 390 L 820 390'}
+          stroke="#475569"
+          strokeOpacity="0.4"
           strokeWidth="3"
         />
 
+        {/* Compaction Grid lines */}
         {Array.from({ length: 5 }).map((_, index) => {
           const y = 430 + index * 23;
           return (
@@ -195,13 +240,14 @@ export default function PitVisualization({
               x2={is3d ? '770' : '750'}
               y1={y}
               y2={y}
-              stroke="#fde68a"
-              strokeOpacity={0.08 + compactedRatio * 0.05}
-              strokeWidth="2"
+              stroke="#fbbf24"
+              strokeOpacity={0.06 + compactedRatio * 0.08}
+              strokeWidth="1.5"
             />
           );
         })}
 
+        {/* Compaction Crack paths */}
         {Array.from({ length: crackCount }).map((_, index) => {
           const startX = (is3d ? 236 : 255) + index * 90;
           return (
@@ -209,24 +255,25 @@ export default function PitVisualization({
               key={index}
               d={`M ${startX} 392 L ${startX + 12} ${410 + index * 4} L ${startX + 4} ${432 + index * 3}`}
               fill="none"
-              stroke="#2b1707"
-              strokeOpacity="0.55"
-              strokeWidth="3"
+              stroke="#1e0b00"
+              strokeOpacity="0.8"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           );
         })}
 
+        {/* Hanging rope */}
         <line
           x1={bobX}
           y1={topAnchorY}
           x2={bobX}
           y2={ropeBottomY}
           stroke="url(#ropeGradient)"
-          strokeWidth={is3d ? '12' : '10'}
+          strokeWidth={is3d ? '10' : '8'}
           strokeLinecap="round"
-          opacity="0.95"
+          opacity="0.9"
         />
 
         <line
@@ -234,144 +281,228 @@ export default function PitVisualization({
           y1={topAnchorY}
           x2={bobX}
           y2={ropeBottomY}
-          stroke="#0f172a"
-          strokeOpacity="0.45"
-          strokeWidth={is3d ? '3' : '2'}
+          stroke="#020617"
+          strokeOpacity="0.5"
+          strokeWidth={is3d ? '2' : '1.5'}
           strokeLinecap="round"
         />
 
-        <circle cx={bobX} cy={topAnchorY} r="10" fill="#e2e8f0" stroke="#334155" strokeWidth="4" />
+        {/* Top anchor circle */}
+        <circle cx={bobX} cy={topAnchorY} r="9" fill="#94a3b8" stroke="#334155" strokeWidth="3" />
 
+        {/* Pendulum weight cylinder */}
         <g transform={is3d ? `translate(12, 6)` : 'translate(0, 0)'}>
+          {/* Glowing bottom shadow */}
           <ellipse
             cx={bobX + (is3d ? 12 : 0)}
-            cy={bobY + (is3d ? 18 : 16)}
+            cy={bobY + cylinderHeight / 2 + (is3d ? 12 : 8)}
             rx={bobRadius + 8}
-            ry={bobRadius * 0.55}
+            ry={bobRadius * ryRatio * 1.2}
             fill="#020617"
-            fillOpacity={is3d ? '0.45' : '0.25'}
+            fillOpacity={is3d ? '0.6' : '0.4'}
             filter="url(#deepShadow)"
           />
-          <circle
-            cx={bobX}
-            cy={bobY}
-            r={bobRadius}
-            fill="url(#bobGradient)"
+          {/* Cylinder Body */}
+          <path
+            d={`M ${bobX - bobRadius} ${bobY - cylinderHeight / 2}
+                L ${bobX - bobRadius} ${bobY + cylinderHeight / 2}
+                A ${bobRadius} ${bobRadius * ryRatio} 0 0 0 ${bobX + bobRadius} ${bobY + cylinderHeight / 2}
+                L ${bobX + bobRadius} ${bobY - cylinderHeight / 2}
+                A ${bobRadius} ${bobRadius * ryRatio} 0 0 0 ${bobX - bobRadius} ${bobY - cylinderHeight / 2} Z`}
+            fill="url(#cylinderBodyGradient)"
             stroke={pendulumColor}
-            strokeWidth="6"
+            strokeWidth="4"
             filter="url(#softShadow)"
             opacity="0.98"
             className="cursor-pointer"
             onClick={onPendulumClick}
+            style={{ 
+              filter: state === 'IMPACT' ? `drop-shadow(0 0 8px ${pendulumColor})` : 'none',
+              transition: 'stroke 0.3s ease, filter 0.3s ease'
+            }}
+          />
+          {/* Cylinder Top Face */}
+          <ellipse
+            cx={bobX}
+            cy={bobY - cylinderHeight / 2}
+            rx={bobRadius}
+            ry={bobRadius * ryRatio}
+            fill="url(#cylinderTopGradient)"
+            stroke={pendulumColor}
+            strokeWidth="2"
+            className="cursor-pointer"
+            onClick={onPendulumClick}
+          />
+          {/* Top Face Inner Rim (Glowing effect) */}
+          <ellipse
+            cx={bobX}
+            cy={bobY - cylinderHeight / 2}
+            rx={bobRadius - 3}
+            ry={(bobRadius - 3) * ryRatio}
+            fill="none"
+            stroke="#ffffff"
+            strokeOpacity="0.25"
+            strokeWidth="1.5"
+            className="pointer-events-none"
           />
         </g>
 
-        <circle
-          cx={bobX - 12}
-          cy={bobY - 12}
-          r="14"
-          fill="#ffffff"
-          fillOpacity="0.2"
-        />
-
+        {/* Impact shockwaves */}
         {state === 'IMPACT' && (
           <g>
-            <circle cx={bobX + (is3d ? 10 : 0)} cy={groundY - 6} r={is3d ? '104' : '92'} fill="none" stroke="#f87171" strokeOpacity="0.75" strokeWidth="5" />
-            <circle cx={bobX + (is3d ? 10 : 0)} cy={groundY - 6} r={is3d ? '148' : '132'} fill="none" stroke="#fb7185" strokeOpacity="0.35" strokeWidth="3" />
+            <circle cx={bobX + (is3d ? 10 : 0)} cy={groundY - 6} r={is3d ? '104' : '92'} fill="none" stroke="#f43f5e" strokeOpacity="0.8" strokeWidth="4" style={{ filter: 'drop-shadow(0 0 4px #f43f5e)' }} />
+            <circle cx={bobX + (is3d ? 10 : 0)} cy={groundY - 6} r={is3d ? '148' : '132'} fill="none" stroke="#f43f5e" strokeOpacity="0.3" strokeWidth="2" style={{ filter: 'drop-shadow(0 0 2px #f43f5e)' }} />
           </g>
         )}
 
-          <rect x={is3d ? '108' : '116'} y="150" width="16" height="260" rx="8" fill="#0f172a" fillOpacity="0.45" />
+        {/* Left vertical rule */}
+        <rect x={is3d ? '108' : '116'} y="150" width="12" height="260" rx="6" fill="#020617" fillOpacity="0.6" />
         {Array.from({ length: 6 }).map((_, index) => {
           const markHeight = 150 + index * 52;
           return (
             <g key={index}>
-                <line x1={is3d ? '102' : '110'} x2={is3d ? '144' : '150'} y1={markHeight} y2={markHeight} stroke="#cbd5e1" strokeWidth="3" opacity="0.8" />
-                <text x={is3d ? '84' : '92'} y={markHeight + 5} fill="#e2e8f0" fontSize="18" textAnchor="end" opacity="0.9">
+                <line x1={is3d ? '102' : '110'} x2={is3d ? '140' : '146'} y1={markHeight} y2={markHeight} stroke="#475569" strokeWidth="2" opacity="0.8" />
+                <text x={is3d ? '84' : '92'} y={markHeight + 5} fill="#94a3b8" fontSize="15" fontWeight="bold" fontFamily="var(--font-mono), monospace" textAnchor="end" opacity="0.9">
                 {maxHeight - index * 3}m
               </text>
             </g>
           );
         })}
 
-          <text x="500" y="36" fill="#f8fafc" fontSize="22" fontWeight="700" textAnchor="middle" opacity="0.95">
-            {is3d ? '3D depth view' : '2D overview'} · {clampedHeight.toFixed(2)}m
+        {/* Visual Title */}
+        <text x="500" y="36" fill="#f8fafc" fontSize="20" fontWeight="800" textAnchor="middle" opacity="0.95" letterSpacing="0.05em">
+          {is3d ? '3D DEPTH VIEW' : '2D OVERVIEW'} · {clampedHeight.toFixed(2)}m
         </text>
 
-          <text x="500" y="62" fill="#cbd5e1" fontSize="13" textAnchor="middle" opacity="0.9">
-            {is3d ? 'Enhanced depth and shadow cues for presentation mode' : 'Clean analytical view for precise inspection'}
+        <text x="500" y="60" fill="#64748b" fontSize="11" fontWeight="bold" textAnchor="middle" opacity="0.9" letterSpacing="0.02em">
+          {is3d ? 'ENHANCED GEOMETRICAL & DEPTH CUES' : 'ANALYTICAL PROJECTION PROFILE'}
         </text>
         </svg>
       </div>
 
-        <div className="relative border-t border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur-md sm:px-5">
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      {/* Bottom metrics section */}
+      <div className="relative border-t border-slate-800/80 bg-slate-950/70 px-4 py-4 backdrop-blur-md sm:px-5">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <button
             type="button"
             onClick={onStateClick}
-              className="min-h-[116px] rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition-transform hover:-translate-y-0.5 hover:bg-white/10 sm:p-3"
+            className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
             title="Click for state details"
           >
-              <div className="text-[10px] uppercase tracking-[0.28em] text-slate-400">State</div>
-              <div className="mt-2 flex flex-col gap-1.5">
-                <div className="text-lg sm:text-xl font-extrabold leading-none tracking-tight" style={{ color: pendulumColor }}>
-                {state}
-              </div>
-                <div className="inline-flex w-fit rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-slate-900" style={{ backgroundColor: pendulumColor }}>
-                {stateMeta.label}
-              </div>
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">System State</div>
+            <div className="mt-2 text-base sm:text-lg font-black leading-none tracking-wider uppercase" style={{ color: pendulumColor }}>
+              {state}
+            </div>
+            <div className="mt-2 inline-flex w-fit rounded-full px-2.5 py-0.5 text-[9px] font-bold text-slate-950 uppercase tracking-wide" style={{ backgroundColor: pendulumColor }}>
+              {stateMeta.label}
             </div>
           </button>
 
           <button
             type="button"
             onClick={onHeightClick}
-            className="rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition-transform hover:-translate-y-0.5 hover:bg-white/10 sm:p-3"
+            className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
             title="Click for height details"
           >
-            <div className="text-[10px] uppercase tracking-[0.28em] text-slate-400">Height</div>
-            <div className="mt-2 text-2xl sm:text-3xl font-black text-white leading-none">
-              {clampedHeight.toFixed(2)}<span className="ml-1 text-sm sm:text-base font-semibold text-slate-300">m</span>
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Fall Height</div>
+            <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+              {clampedHeight.toFixed(2)}<span className="ml-0.5 text-xs font-semibold text-slate-400">m</span>
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${stateMeta.accent} transition-all duration-300`}
-                style={{ width: `${heightRatio * 100}%` }}
-              />
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-900 p-0.5">
+              <div className={`h-full rounded-full bg-gradient-to-r ${stateMeta.accent} transition-all duration-300`} style={{ width: `${heightRatio * 100}%` }} />
             </div>
           </button>
 
           <button
             type="button"
             onClick={onCompactionClick}
-            className="rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition-transform hover:-translate-y-0.5 hover:bg-white/10 sm:p-3"
+            className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
             title="Click for compaction details"
           >
-            <div className="text-[10px] uppercase tracking-[0.28em] text-slate-400">Soil Compaction</div>
-            <div className="mt-2 text-2xl sm:text-3xl font-black text-amber-300 leading-none">
-              {soilCompaction.toFixed(1)}<span className="ml-1 text-sm sm:text-base font-semibold text-slate-300">%</span>
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Soil Compaction</div>
+            <div className="mt-2 text-2xl font-black text-amber-400 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+              {soilCompaction.toFixed(1)}<span className="ml-0.5 text-xs font-semibold text-slate-400">%</span>
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${stateMeta.accent} transition-all duration-300`}
-                style={{ width: `${Math.max(0, Math.min(100, soilCompaction))}%` }}
-              />
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-900 p-0.5">
+              <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, soilCompaction))}%` }} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={onPendulumClick}
+            className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
+            title="Click for energy details"
+          >
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Total Energy</div>
+            <div className="mt-2 text-base font-black text-slate-100" style={{ fontFamily: 'var(--font-mono), monospace' }}>{(totalEnergy / 1000).toFixed(2)} kJ</div>
+            <div className="text-[9px] sm:text-[10px] text-slate-350 font-semibold mt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
+              <span>PE: {(potentialEnergy / 1000).toFixed(1)} kJ</span>
+              <span className="text-slate-600">•</span>
+              <span>KE: {(kineticEnergy / 1000).toFixed(1)} kJ</span>
             </div>
           </button>
         </div>
 
-        <div className="mt-2.5 rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2.5 text-xs text-slate-300 sm:px-4 sm:py-3 sm:text-sm">
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3">
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Battery Charge</div>
+            <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{batteryCapacity.toFixed(1)}<span className="ml-0.5 text-xs font-semibold text-slate-400">%</span></div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-900 p-0.5">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-300" style={{ width: `${batteryRatio * 100}%` }} />
+            </div>
+            <div className="mt-2 text-[10px] text-slate-400 font-mono">{batteryVoltage.toFixed(0)}V · {batteryCurrent.toFixed(1)}A</div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3">
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Grid Power</div>
+            <div className="mt-2 text-base font-black text-slate-100" style={{ fontFamily: 'var(--font-mono), monospace' }}>Solar {solarPower.toFixed(0)}W</div>
+            <div className="text-[9px] sm:text-[10px] text-slate-350 font-semibold mt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
+              <span>Motor: {motorPower.toFixed(0)}W</span>
+              <span className="text-slate-600">•</span>
+              <span>Gen: {generatorPower.toFixed(0)}W</span>
+            </div>
+            <div className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-1">Load: {loadPower.toFixed(0)}W</div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onPendulumClick}
+            className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
+            title="Click for pendulum details"
+          >
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Telemetry Velocity</div>
+            <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{pendulumVelocity.toFixed(2)}<span className="ml-0.5 text-xs font-semibold text-slate-400">m/s</span></div>
+            <div className="text-[9px] sm:text-[10px] text-slate-350 font-semibold mt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
+              <span>Mass: {pendulumMass.toFixed(0)} kg</span>
+              <span className="text-slate-600">•</span>
+              <span>Impacts: {impactCount}</span>
+            </div>
+          </button>
+
           <button
             type="button"
             onClick={onSoilClick}
-            className="inline-flex items-center gap-2 font-medium text-white transition-colors hover:text-amber-200"
+            className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
             title="Click for soil details"
           >
-            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: pendulumColor }} />
-            Soil layer cutaway
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Soil Condition</div>
+            <div className="mt-2 text-2xl font-black text-amber-400 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{soilDensity.toFixed(0)}<span className="ml-0.5 text-xs font-semibold text-slate-400">kg/m³</span></div>
+            <div className="mt-2 text-[10px] text-slate-400 font-medium">Compaction {soilCompaction.toFixed(1)}%</div>
           </button>
-          <span className="mx-2 text-slate-500">•</span>
-          <span>Compaction increases visible density.</span>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2 text-xs text-slate-400 flex items-center justify-between flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onSoilClick}
+            className="inline-flex items-center gap-2 font-bold text-slate-300 transition-colors hover:text-amber-200 cursor-pointer"
+            title="Click for soil details"
+          >
+            <span className="inline-block h-2 w-2 rounded-full animate-ping" style={{ backgroundColor: pendulumColor }} />
+            Soil layer cutaway analysis profile
+          </button>
+          <span>Compaction dynamically raises visible mass density.</span>
         </div>
       </div>
     </div>

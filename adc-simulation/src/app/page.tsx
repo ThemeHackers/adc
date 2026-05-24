@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { SimulationEngine, SimulationData } from '@/lib/simulation-engine';
-import { DataLogger } from '@/lib/dataLogger';
+import { SimulationEngine, SimulationData, SimulationState } from '@/lib/simulation-engine';
+import { DataLogger, SimulationStatistics } from '@/lib/dataLogger';
 import { SimulationConfig } from '@/components/ConfigurationPanel';
 import ConfigurationPanel from '@/components/ConfigurationPanel';
 import AlertSystem, { useAlertManager } from '@/components/AlertSystem';
@@ -16,7 +16,25 @@ import ReportGenerator from '@/components/ReportGenerator';
 import HistoricalComparison from '@/components/HistoricalComparison';
 import DetailedInfoPopup from '@/components/DetailedInfoPopup';
 import { HardwareClient, HardwareData } from '@/lib/hardwareClient';
-import { Download, History, Zap, Activity, Gauge, Droplet, Mountain, Clock, TrendingUp, Cpu, Server } from 'lucide-react';
+import { Download, History, Zap, Activity, Gauge, Droplet, Mountain, Clock, TrendingUp, Cpu, Server, Battery, Layers } from 'lucide-react';
+import { calculateCylinderVolume, calculateCylinderRadius, calculateCylinderHeight, calculateCylinderBottomArea } from '@/lib/formulas';
+
+type PopupItem = {
+  label: string;
+  value: string | number;
+  unit?: string;
+  icon?: React.ReactNode;
+  color?: string;
+};
+
+type PopupData = Record<string, PopupItem>;
+
+interface HistoricalRun {
+  id: string;
+  name: string;
+  timestamp: number;
+  statistics: SimulationStatistics;
+}
 
 export default function Home() {
   const [simulation] = useState(() => new SimulationEngine());
@@ -30,12 +48,7 @@ export default function Home() {
   
 
   const [hardwareMode, setHardwareMode] = useState(false);
-  const [hardwareConnected, setHardwareConnected] = useState(false);
-  const [hardwareClient] = useState(() => new HardwareClient('ws://127.0.0.1:3002'));
-  
-  useEffect(() => {
-    setConfigOpen(false);
-  }, []);
+  const [hardwareClient] = useState(() => new HardwareClient());
   
 
   useEffect(() => {
@@ -45,20 +58,17 @@ export default function Home() {
       hardwareClient.onData((hardwareData: HardwareData) => {
         setData(hardwareData as SimulationData);
         dataLogger.log(hardwareData);
-        setHardwareConnected(true);
       });
       
       hardwareClient.onStateChange((state: string) => {
-        simulation.setState(state as any);
+        simulation.setState(state as SimulationState);
       });
       
       return () => {
         hardwareClient.disconnect();
-        setHardwareConnected(false);
       };
     } else {
       hardwareClient.disconnect();
-      setHardwareConnected(false);
     }
   }, [hardwareMode, hardwareClient, simulation, dataLogger]);
   const [config, setConfig] = useState<SimulationConfig>({
@@ -73,13 +83,13 @@ export default function Home() {
     generatorEfficiency: 0.90,
     initialSoilDensity: 1600
   });
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [historicalData, setHistoricalData] = useState<HistoricalRun[]>([]);
   const [showHistorical, setShowHistorical] = useState(false);
   
 
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupTitle, setPopupTitle] = useState('');
-  const [popupData, setPopupData] = useState<Record<string, any>>({});
+  const [popupData, setPopupData] = useState<PopupData>({});
   
   const [energyHistory, setEnergyHistory] = useState<Array<{ time: number; value: number }>>([]);
   const [powerHistory, setPowerHistory] = useState<Array<{ time: number; value: number }>>([]);
@@ -117,7 +127,7 @@ export default function Home() {
   }, [isRunning, updateSimulation]);
   
   const handleStateChange = (state: string) => {
-    simulation.setState(state as any);
+    simulation.setState(state as SimulationState);
     setData(simulation.getData());
   };
   
@@ -165,7 +175,12 @@ export default function Home() {
   };
   
   const handlePendulumClick = () => {
-    setPopupTitle('Pendulum Details');
+    setPopupTitle('Pendulum Details (Solid Cylinder)');
+    const volume = calculateCylinderVolume(data.pendulumMass);
+    const radius = calculateCylinderRadius(volume);
+    const cylinderHeightVal = calculateCylinderHeight(radius);
+    const bottomArea = calculateCylinderBottomArea(radius);
+
     setPopupData({
       mass: {
         label: 'Mass',
@@ -174,7 +189,41 @@ export default function Home() {
         icon: <Mountain className="w-5 h-5" />,
         color: '#3b82f6'
       },
+      shape: {
+        label: 'Weight Shape',
+        value: 'Solid Cylinder',
+        icon: <Layers className="w-5 h-5" />,
+        color: '#8b5cf6'
+      },
+      volume: {
+        label: 'Cylinder Volume',
+        value: volume,
+        unit: 'm³',
+        icon: <Zap className="w-5 h-5" />,
+        color: '#10b981'
+      },
+      radius: {
+        label: 'Cylinder Radius',
+        value: radius,
+        unit: 'm',
+        icon: <TrendingUp className="w-5 h-5" />,
+        color: '#f59e0b'
+      },
       height: {
+        label: 'Cylinder Height',
+        value: cylinderHeightVal,
+        unit: 'm',
+        icon: <Mountain className="w-5 h-5" />,
+        color: '#3b82f6'
+      },
+      bottomArea: {
+        label: 'Impact Contact Area (Base)',
+        value: bottomArea,
+        unit: 'm²',
+        icon: <Activity className="w-5 h-5" />,
+        color: '#ef4444'
+      },
+      currentHeight: {
         label: 'Current Height',
         value: data.pendulumHeight,
         unit: 'm',
@@ -188,26 +237,12 @@ export default function Home() {
         icon: <Activity className="w-5 h-5" />,
         color: '#f59e0b'
       },
-      potentialEnergy: {
-        label: 'Potential Energy',
-        value: data.potentialEnergy / 1000,
-        unit: 'kJ',
-        icon: <Zap className="w-5 h-5" />,
-        color: '#ef4444'
-      },
-      kineticEnergy: {
-        label: 'Kinetic Energy',
-        value: data.kineticEnergy / 1000,
+      totalEnergy: {
+        label: 'Total Energy',
+        value: data.totalEnergy / 1000,
         unit: 'kJ',
         icon: <Zap className="w-5 h-5" />,
         color: '#8b5cf6'
-      },
-      maxHeight: {
-        label: 'Max Height',
-        value: config.maxHeight,
-        unit: 'm',
-        icon: <Mountain className="w-5 h-5" />,
-        color: '#6b7280'
       }
     });
     setPopupOpen(true);
@@ -235,6 +270,20 @@ export default function Home() {
         value: data.impactCount,
         icon: <Activity className="w-5 h-5" />,
         color: '#ef4444'
+      },
+      batteryCapacity: {
+        label: 'Battery Capacity',
+        value: data.batteryCapacity,
+        unit: '%',
+        icon: <Battery className="w-5 h-5" />,
+        color: '#22c55e'
+      },
+      batteryCurrent: {
+        label: 'Battery Current',
+        value: data.batteryCurrent,
+        unit: 'A',
+        icon: <Battery className="w-5 h-5" />,
+        color: '#3b82f6'
       },
       initialDensity: {
         label: 'Initial Density',
@@ -332,6 +381,27 @@ export default function Home() {
         unit: 'W',
         icon: <Activity className="w-5 h-5" />,
         color: '#ef4444'
+      },
+      solarPower: {
+        label: 'Solar Power',
+        value: data.solarPower,
+        unit: 'W',
+        icon: <Zap className="w-5 h-5" />,
+        color: '#f59e0b'
+      },
+      batteryCapacity: {
+        label: 'Battery Capacity',
+        value: data.batteryCapacity,
+        unit: '%',
+        icon: <Battery className="w-5 h-5" />,
+        color: '#22c55e'
+      },
+      totalEnergy: {
+        label: 'Total Energy',
+        value: data.totalEnergy / 1000,
+        unit: 'kJ',
+        icon: <Zap className="w-5 h-5" />,
+        color: '#8b5cf6'
       }
     });
     setPopupOpen(true);
@@ -377,9 +447,13 @@ export default function Home() {
     });
     setPopupOpen(true);
   };
+
+  const hardwareConnected = hardwareMode && hardwareClient.getConnectionStatus();
+
+  const statistics = dataLogger.getStatistics();
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 p-6 relative">
+    <div className="min-h-screen bg-[#070b19] bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.2),transparent_50%),radial-gradient(circle_at_bottom,rgba(88,28,135,0.15),transparent_60%)] p-4 sm:p-6 text-slate-100 relative">
       {/* Alert System */}
       <AlertSystem alerts={alerts} onDismiss={dismissAlert} />
       
@@ -407,47 +481,47 @@ export default function Home() {
       />
       
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between relative z-10">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between relative z-10">
         <div className="max-w-2xl">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent leading-tight">
-            ADC Simulation Dashboard
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-1.5 bg-gradient-to-r from-blue-400 via-indigo-200 to-purple-400 bg-clip-text text-transparent leading-tight tracking-wider uppercase">
+            ADC Command Center
           </h1>
-          <p className="text-slate-300 text-base sm:text-lg">
-            Artificial Dynamic Compaction Monitoring System
+          <p className="text-slate-400 text-xs sm:text-sm font-semibold tracking-wide uppercase">
+            Artificial Dynamic Compaction Telemetry Console
           </p>
         </div>
         
         {/* Header Controls */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Hardware Mode Toggle */}
           <button
             onClick={() => {
               setHardwareMode(!hardwareMode);
               addAlert(hardwareMode ? 'Switched to Simulation Mode' : 'Switched to Hardware Mode', 'info');
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${
+            className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider ${
               hardwareMode 
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
-                : 'bg-gradient-to-r from-gray-500 to-slate-600 hover:from-gray-600 hover:to-slate-700 text-white'
+                ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-400 border-emerald-500/30 shadow-emerald-500/10' 
+                : 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 hover:from-slate-700/80 hover:to-slate-850/80 text-slate-300 border-slate-700/60 shadow-slate-900/20'
             }`}
             type="button"
           >
-            {hardwareMode ? <Server className="w-5 h-5" /> : <Cpu className="w-5 h-5" />}
+            {hardwareMode ? <Server className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
             {hardwareMode ? 'Hardware' : 'Simulation'}
           </button>
           
           {/* Connection Status Indicator */}
           {hardwareMode && (
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${
+            <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl border ${
               hardwareConnected 
-                ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-red-100 text-red-700 border border-red-300'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
             }`}>
-              <div className={`w-3 h-3 rounded-full ${
-                hardwareConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-              }`} />
-              <span className="text-sm font-medium">
-                {hardwareConnected ? 'Connected' : 'Disconnected'}
+              <div className={`w-2 h-2 rounded-full ${
+                hardwareConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+              }`} style={{ boxShadow: hardwareConnected ? '0 0 6px #10b981' : 'none' }} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">
+                {hardwareConnected ? 'Connected' : 'Offline'}
               </span>
             </div>
           )}
@@ -455,44 +529,44 @@ export default function Home() {
           {/* Export Buttons */}
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-slate-900/80 border border-slate-850 hover:border-slate-700 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider"
             type="button"
           >
-            <Download className="w-5 h-5" />
+            <Download className="w-4 h-4" />
             CSV
           </button>
           
           <button
             onClick={handleExportJSON}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-slate-900/80 border border-slate-850 hover:border-slate-700 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider"
             type="button"
           >
-            <Download className="w-5 h-5" />
+            <Download className="w-4 h-4" />
             JSON
           </button>
           
           <button
             onClick={() => setShowHistorical(!showHistorical)}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-slate-900/80 border border-slate-850 hover:border-slate-700 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider"
             type="button"
           >
-            <History className="w-5 h-5" />
-            {showHistorical ? 'Hide' : 'History'}
+            <History className="w-4 h-4" />
+            {showHistorical ? 'Hide History' : 'History'}
           </button>
         </div>
       </div>
       
       {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-12 gap-4 relative z-10">
+      <div className="grid grid-cols-12 gap-5 relative z-10">
         {/* Left Column - Visualization */}
-        <div className="col-span-12 lg:col-span-5 space-y-4 min-w-0">
-          <div className="bg-white rounded-xl p-4 shadow-2xl border border-slate-200">
+        <div className="col-span-12 lg:col-span-6 space-y-4 min-w-0">
+          <div className="cyber-glass rounded-2xl p-5 shadow-2xl">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-800">Live Visualization</h2>
-                <p className="text-sm text-slate-500">Switch between a clean 2D study view and a richer 3D presentation view.</p>
+                <h2 className="text-base font-bold text-slate-200 tracking-wide uppercase">Live Visualization</h2>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Switch study perspectives</p>
               </div>
-              <div className="inline-flex w-full sm:w-auto justify-between rounded-full bg-slate-100 p-1 shadow-inner">
+              <div className="inline-flex w-full sm:w-auto justify-between rounded-xl bg-slate-950/60 p-1 border border-slate-800/85 shadow-inner">
                 {(['2d', '3d'] as const).map((mode) => {
                   const active = visualizationMode === mode;
                   return (
@@ -500,10 +574,10 @@ export default function Home() {
                       key={mode}
                       type="button"
                       onClick={() => setVisualizationMode(mode)}
-                      className={`flex-1 sm:flex-none min-w-[88px] rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                      className={`flex-1 sm:flex-none min-w-[72px] rounded-lg py-1.5 px-3 text-xs font-bold transition-all cursor-pointer ${
                         active
-                          ? 'bg-slate-900 text-white shadow-lg'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-slate-800 text-white shadow-lg border border-slate-700/50'
+                          : 'text-slate-500 hover:text-slate-300'
                       }`}
                     >
                       {mode.toUpperCase()}
@@ -512,12 +586,27 @@ export default function Home() {
                 })}
               </div>
             </div>
-            <div className="h-[640px] lg:h-[700px] overflow-hidden">
+            
+            <div className="h-auto">
               <PitVisualization
                 height={data.pendulumHeight}
                 state={data.state}
                 soilCompaction={data.soilCompaction}
+                soilDensity={data.soilDensity}
+                impactCount={data.impactCount}
+                pendulumVelocity={data.pendulumVelocity}
+                solarPower={data.solarPower}
+                motorPower={data.motorPower}
+                generatorPower={data.generatorPower}
+                loadPower={data.loadPower}
+                batteryCapacity={data.batteryCapacity}
+                batteryVoltage={data.batteryVoltage}
+                batteryCurrent={data.batteryCurrent}
+                potentialEnergy={data.potentialEnergy}
+                kineticEnergy={data.kineticEnergy}
+                totalEnergy={data.totalEnergy}
                 viewMode={visualizationMode}
+                pendulumMass={data.pendulumMass}
                 onPendulumClick={handlePendulumClick}
                 onSoilClick={handleSoilClick}
                 onHeightClick={handleHeightClick}
@@ -538,20 +627,20 @@ export default function Home() {
           
           {/* Report Generator */}
           <ReportGenerator
-            statistics={dataLogger.getStatistics()}
+            statistics={statistics}
             config={config}
             onGenerateReport={() => addAlert('Report generated', 'success')}
           />
         </div>
         
         {/* Right Column - Metrics and Gauges */}
-        <div className="col-span-12 lg:col-span-7 space-y-4 min-w-0">
+        <div className="col-span-12 lg:col-span-6 space-y-4 min-w-0">
           {/* Historical Comparison (when shown) */}
           {showHistorical && (
             <div className="col-span-12">
               <HistoricalComparison
                 historicalData={historicalData}
-                currentData={dataLogger.getStatistics()}
+                currentData={statistics}
               />
             </div>
           )}
@@ -564,7 +653,7 @@ export default function Home() {
               max={config.solarPower}
               unit="W"
               icon="sun"
-              color="#22c55e"
+              color="#10b981"
             />
             <PowerGauge
               title="Motor Power"
@@ -588,7 +677,7 @@ export default function Home() {
               max={800}
               unit="W"
               icon="battery"
-              color="#ef4444"
+              color="#f43f5e"
             />
           </div>
           
@@ -605,6 +694,10 @@ export default function Home() {
               totalEnergy={data.totalEnergy}
               soilDensity={data.soilDensity}
               impactCount={data.impactCount}
+              estimatedEnergyValueTHB={statistics.estimatedEnergyValueTHB}
+              estimatedConsumptionCostTHB={statistics.estimatedConsumptionCostTHB}
+              estimatedNetValueTHB={statistics.estimatedNetValueTHB}
+              electricityRateTHBPerKWh={statistics.electricityRateTHBPerKWh}
             />
           </div>
           
@@ -637,24 +730,24 @@ export default function Home() {
           </div>
           
           {/* System Status */}
-          <div className="bg-white rounded-xl p-4 shadow-lg border border-slate-200">
-            <h3 className="font-semibold text-gray-700 mb-3">System Status</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="cyber-glass rounded-2xl p-5 shadow-2xl">
+            <h3 className="font-bold text-slate-200 mb-3 text-xs tracking-wider uppercase">System Telemetry Log</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
               <div>
-                <div className="text-gray-500">Simulation Time</div>
-                <div className="text-lg font-bold text-gray-900">{data.time.toFixed(1)}s</div>
+                <div className="text-slate-500 font-bold">Simulation Time</div>
+                <div className="text-lg font-black text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{data.time.toFixed(1)}s</div>
               </div>
               <div>
-                <div className="text-gray-500">Pendulum Velocity</div>
-                <div className="text-lg font-bold text-gray-900">{data.pendulumVelocity.toFixed(2)} m/s</div>
+                <div className="text-slate-500 font-bold">Velocity</div>
+                <div className="text-lg font-black text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{data.pendulumVelocity.toFixed(2)} m/s</div>
               </div>
               <div>
-                <div className="text-gray-500">Pendulum Mass</div>
-                <div className="text-lg font-bold text-gray-900">{data.pendulumMass} kg</div>
+                <div className="text-slate-500 font-bold">Mass</div>
+                <div className="text-lg font-black text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{data.pendulumMass} kg</div>
               </div>
               <div>
-                <div className="text-gray-500">System State</div>
-                <div className="text-lg font-bold text-blue-600">{data.state}</div>
+                <div className="text-slate-500 font-bold">Status</div>
+                <div className="text-lg font-black text-blue-400 mt-1">{data.state}</div>
               </div>
             </div>
           </div>
@@ -662,7 +755,7 @@ export default function Home() {
           {/* Save to History Button */}
           <button
             onClick={handleSaveToHistory}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 px-4 rounded-lg font-medium transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-3.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg shadow-purple-500/10 cursor-pointer border border-purple-500/20 transition-all duration-300 hover:-translate-y-0.5"
           >
             <History className="w-5 h-5" />
             Save Current Run to History

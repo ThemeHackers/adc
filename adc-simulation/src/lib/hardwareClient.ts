@@ -42,9 +42,19 @@ export class HardwareClient {
   private pollingInterval: number = 100;
   private sensorProcessor: SensorDataProcessor;
 
-  constructor(serverUrl: string = 'ws://127.0.0.1:3002') {
-    this.serverUrl = serverUrl;
-    this.httpUrl = serverUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+  constructor(serverUrl?: string) {
+    if (serverUrl) {
+      this.serverUrl = serverUrl;
+      this.httpUrl = serverUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+    } else if (typeof window !== 'undefined') {
+      const host = window.location.host;
+      const protocol = window.location.protocol;
+      this.httpUrl = `${protocol}//${host}`;
+      this.serverUrl = `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}`;
+    } else {
+      this.serverUrl = 'ws://127.0.0.1:3001';
+      this.httpUrl = 'http://127.0.0.1:3001';
+    }
     this.sensorProcessor = new SensorDataProcessor();
   }
 
@@ -184,8 +194,14 @@ export class HardwareClient {
 export class HardwareAPIClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = 'http://127.0.0.1:3002') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+    } else if (typeof window !== 'undefined') {
+      this.baseUrl = window.location.origin;
+    } else {
+      this.baseUrl = 'http://127.0.0.1:3001';
+    }
   }
 
   public async sendData(data: Partial<HardwareData>): Promise<boolean> {

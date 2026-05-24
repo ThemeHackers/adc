@@ -66,3 +66,28 @@ export function calibrateLinearValue(
   const calibrated = minCalibrated + normalized * (maxCalibrated - minCalibrated);
   return (calibrated + offset) * scale;
 }
+
+
+export const CYLINDER_DENSITY_STEEL = 7850; 
+export const CYLINDER_ASPECT_RATIO_H_TO_R = 3; 
+
+export function calculateCylinderVolume(massKg: number, density: number = CYLINDER_DENSITY_STEEL): number {
+  return massKg / density;
+}
+
+export function calculateCylinderRadius(volumeM3: number, aspectRatio: number = CYLINDER_ASPECT_RATIO_H_TO_R): number {
+  return Math.pow(volumeM3 / (Math.PI * aspectRatio), 1 / 3);
+}
+
+export function calculateCylinderHeight(radiusM: number, aspectRatio: number = CYLINDER_ASPECT_RATIO_H_TO_R): number {
+  return radiusM * aspectRatio;
+}
+
+export function calculateCylinderBottomArea(radiusM: number): number {
+  return Math.PI * Math.pow(radiusM, 2);
+}
+
+export function calculateCylinderImpactPressure(forceNewtons: number, radiusM: number): number {
+  const area = calculateCylinderBottomArea(radiusM);
+  return area > 0 ? forceNewtons / area : 0;
+}

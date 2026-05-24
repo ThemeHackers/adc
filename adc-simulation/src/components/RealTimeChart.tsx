@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   LineChart,
   Line,
@@ -8,7 +8,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Area,
   AreaChart
@@ -36,25 +35,22 @@ export default function RealTimeChart({
 }: RealTimeChartProps) {
   const chartData = data.slice(-maxDataPoints);
   
-  const hexToRgba = (hex: string, alpha: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
-  
-  const gradientColor = hexToRgba(color, 0.3);
-  
   return (
-    <div className="bg-white rounded-xl p-5 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+    <div className="cyber-glass rounded-2xl p-5 shadow-2xl transition-all duration-300 hover:border-slate-700/80">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-gray-800 text-lg">{title}</h3>
-        <div className="flex items-center gap-2">
+        <div>
+          <h3 className="font-bold text-slate-200 text-base tracking-wide">{title}</h3>
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Live Telemetry</span>
+        </div>
+        <div className="flex items-center gap-2 bg-slate-950/40 border border-slate-800/80 px-2.5 py-1.5 rounded-xl">
           <div 
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: color }}
+            className="w-2 h-2 rounded-full"
+            style={{ 
+              backgroundColor: color,
+              boxShadow: `0 0 6px ${color}`
+            }}
           />
-          <span className="text-sm text-gray-500 font-medium">{unit}</span>
+          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{unit}</span>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
@@ -62,34 +58,35 @@ export default function RealTimeChart({
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
+                <stop offset="5%" stopColor={color} stopOpacity={0.4}/>
                 <stop offset="95%" stopColor={color} stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity="0.6" />
             <XAxis
               dataKey="time"
-              stroke="#9ca3af"
+              stroke="#64748b"
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value.toFixed(0)}s`}
+              tickFormatter={(value) => `${Number(value).toFixed(0)}s`}
             />
             <YAxis
-              stroke="#9ca3af"
+              stroke="#64748b"
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value.toFixed(0)}`}
+              tickFormatter={(value) => `${Number(value).toFixed(0)}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'white',
-                border: '2px solid #e5e7eb',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '12px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                color: '#f8fafc'
               }}
-              formatter={(value: number) => [`${value.toFixed(2)} ${unit}`, title]}
+              formatter={(value: any) => [`${Number(value).toFixed(2)} ${unit}`, title]}
             />
             <Area
               type="monotone"
@@ -99,34 +96,38 @@ export default function RealTimeChart({
               fill={`url(#gradient-${color})`}
               dot={false}
               isAnimationActive={false}
+              style={{
+                filter: `drop-shadow(0 0 2px ${color}40)`
+              }}
             />
           </AreaChart>
         ) : (
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity="0.6" />
             <XAxis
               dataKey="time"
-              stroke="#9ca3af"
+              stroke="#64748b"
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value.toFixed(0)}s`}
+              tickFormatter={(value) => `${Number(value).toFixed(0)}s`}
             />
             <YAxis
-              stroke="#9ca3af"
+              stroke="#64748b"
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value.toFixed(0)}`}
+              tickFormatter={(value) => `${Number(value).toFixed(0)}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'white',
-                border: '2px solid #e5e7eb',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '12px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                color: '#f8fafc'
               }}
-              formatter={(value: number) => [`${value.toFixed(2)} ${unit}`, title]}
+              formatter={(value: any) => [`${Number(value).toFixed(2)} ${unit}`, title]}
             />
             <Line
               type="monotone"
@@ -136,6 +137,9 @@ export default function RealTimeChart({
               dot={false}
               activeDot={{ r: 6, stroke: color, strokeWidth: 2, fill: 'white' }}
               isAnimationActive={false}
+              style={{
+                filter: `drop-shadow(0 0 2px ${color}40)`
+              }}
             />
           </LineChart>
         )}

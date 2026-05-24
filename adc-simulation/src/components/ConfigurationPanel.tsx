@@ -51,96 +51,99 @@ export default function ConfigurationPanel({
     return (
       <button
         onClick={onToggle}
-        className="fixed top-4 right-4 bg-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all z-50 cursor-pointer hover:bg-gray-100"
+        className="fixed top-4 right-4 bg-slate-900/80 p-3 rounded-full border border-slate-800 shadow-2xl hover:border-slate-700/80 hover:bg-slate-850 transition-all z-50 cursor-pointer text-slate-300 hover:text-slate-100 shadow-[0_0_10px_rgba(255,255,255,0.02)]"
         type="button"
+        title="Open Configuration Panel"
       >
-        <Settings className="w-6 h-6 text-gray-700" />
+        <Settings className="w-5.5 h-5.5" />
       </button>
     );
   }
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onToggle}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4" onClick={onToggle}>
+      <div 
+        className="cyber-glass bg-slate-900/90 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto border border-slate-800"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Settings className="w-6 h-6 text-blue-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Simulation Configuration
-              </h2>
+        <div className="sticky top-0 bg-slate-950/50 backdrop-blur-md border-b border-slate-800/80 p-5 rounded-t-2xl z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400">
+              <Settings className="w-5 h-5" />
             </div>
-            <button
-              onClick={onToggle}
-              className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"
-              type="button"
-            >
-              ×
-            </button>
+            <div>
+              <h2 className="text-lg font-black tracking-wider uppercase text-slate-200">Simulation Configuration</h2>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Engine Tuning Console</span>
+            </div>
           </div>
+          <button
+            onClick={onToggle}
+            className="text-slate-400 hover:text-slate-200 hover:bg-slate-800/85 text-xl cursor-pointer rounded-xl w-8 h-8 flex items-center justify-center border border-transparent hover:border-slate-700/50 transition-all"
+            type="button"
+          >
+            ×
+          </button>
         </div>
         
         {/* Configuration Form */}
-        <div className="p-6 space-y-6">
+        <div className="p-5 space-y-6">
           {/* Pendulum Settings */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <span className="w-1 h-6 bg-blue-500 rounded"></span>
-              Pendulum Settings
+            <h3 className="text-xs font-black uppercase tracking-wider text-blue-400 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]"></span>
+              Pendulum Dynamics
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Pendulum Mass (kg)
                 </label>
                 <input
                   type="number"
                   value={localConfig.pendulumMass || ''}
                   onChange={(e) => handleChange('pendulumMass', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
                   step="10"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Max Height (m)
                 </label>
                 <input
                   type="number"
                   value={localConfig.maxHeight || ''}
                   onChange={(e) => handleChange('maxHeight', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
                   step="1"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Gravity (m/s²)
                 </label>
                 <input
                   type="number"
                   value={localConfig.gravity || ''}
                   onChange={(e) => handleChange('gravity', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
                   step="0.1"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Initial Soil Density (kg/m³)
                 </label>
                 <input
                   type="number"
                   value={localConfig.initialSoilDensity || ''}
                   onChange={(e) => handleChange('initialSoilDensity', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
                   step="10"
                 />
               </div>
@@ -149,47 +152,47 @@ export default function ConfigurationPanel({
           
           {/* Power System Settings */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <span className="w-1 h-6 bg-green-500 rounded"></span>
-              Power System
+            <h3 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
+              Power Grids & Drive Systems
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Solar Power (W)
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Solar Power Input (W)
                 </label>
                 <input
                   type="number"
                   value={localConfig.solarPower || ''}
                   onChange={(e) => handleChange('solarPower', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 text-slate-100 font-mono text-sm"
                   step="10"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Motor Power (W)
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Motor Drive Power (W)
                 </label>
                 <input
                   type="number"
                   value={localConfig.motorPower || ''}
                   onChange={(e) => handleChange('motorPower', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 text-slate-100 font-mono text-sm"
                   step="10"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Motor Efficiency (%)
                 </label>
                 <input
                   type="number"
                   value={localConfig.motorEfficiency * 100 || ''}
                   onChange={(e) => handleChange('motorEfficiency', parseFloat(e.target.value) / 100)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 text-slate-100 font-mono text-sm"
                   step="1"
                   min="0"
                   max="100"
@@ -197,14 +200,14 @@ export default function ConfigurationPanel({
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Generator Efficiency (%)
                 </label>
                 <input
                   type="number"
                   value={localConfig.generatorEfficiency * 100 || ''}
                   onChange={(e) => handleChange('generatorEfficiency', parseFloat(e.target.value) / 100)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 text-slate-100 font-mono text-sm"
                   step="1"
                   min="0"
                   max="100"
@@ -215,35 +218,35 @@ export default function ConfigurationPanel({
           
           {/* Battery Settings */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <span className="w-1 h-6 bg-yellow-500 rounded"></span>
-              Battery System
+            <h3 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-amber-500 rounded-full shadow-[0_0_8px_#f59e0b]"></span>
+              Accumulator System
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Battery Voltage (V)
                 </label>
                 <select
                   value={localConfig.batteryVoltage}
                   onChange={(e) => handleChange('batteryVoltage', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 text-slate-100 font-medium text-sm cursor-pointer"
                 >
-                  <option value={24}>24V</option>
-                  <option value={48}>48V</option>
+                  <option className="bg-slate-900" value={24}>24V DC</option>
+                  <option className="bg-slate-900" value={48}>48V DC</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Initial Capacity (%)
                 </label>
                 <input
                   type="number"
                   value={localConfig.batteryCapacity || ''}
                   onChange={(e) => handleChange('batteryCapacity', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 font-medium"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 text-slate-100 font-mono text-sm"
                   step="1"
                   min="0"
                   max="100"
@@ -254,21 +257,21 @@ export default function ConfigurationPanel({
         </div>
         
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+        <div className="sticky bottom-0 bg-slate-950/50 backdrop-blur-md p-5 border-t border-slate-800/80 rounded-b-2xl">
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-blue-500/10 cursor-pointer border border-blue-500/20"
             >
-              <Save className="w-5 h-5" />
+              <Save className="w-4 h-4" />
               Save Configuration
             </button>
             
             <button
               onClick={handleResetConfig}
-              className="flex-1 flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-slate-200 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg cursor-pointer border border-slate-700/20"
             >
-              <RotateCcw className="w-5 h-5" />
+              <RotateCcw className="w-4 h-4" />
               Reset to Default
             </button>
           </div>
