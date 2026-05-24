@@ -6,6 +6,8 @@ coverage/
 *.log
 *.pdf
 *.json
+!**/vercel.json
+!**/package.json
 *.csv
 Thumbs.db
 .DS_Store
