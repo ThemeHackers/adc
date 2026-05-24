@@ -1,8 +1,16 @@
-# ADC Hardware System
+# ADC Hardware System & Simulation Dashboard
 
-ระบบวัดค่าจริงจากเซนเซอร์และส่งข้อมูลไปยัง ADC Simulation Dashboard
+ระบบวัดค่าจริงจากเซนเซอร์และส่งข้อมูลไปยัง ADC Simulation Dashboard รวมถึงระบบติดตามการบดอัดดินและพลังงานที่เกิดจากการตกของมวลแบบกึ่งไซเบอร์ฟิสิคัล
 
-## ฟีเจอร์
+## Deployment on Vercel (Next.js Dashboard)
+
+ส่วนของหน้าแดชบอร์ด `adc-simulation` ได้รับการจูนให้พร้อมสำหรับรันบน Vercel แล้ว:
+1. นำโปรเจกต์ขึ้น Vercel จาก GitHub Repository
+2. เข้าไปตั้งค่าที่ **Project Settings -> General**
+3. ปรับค่าช่อง **Root Directory** ให้ชี้ไปที่โฟลเดอร์ `adc-simulation`
+4. เมื่ออัปเดตค่านี้และกด Redeploy ระบบจะทำการ Build และออนไลน์เว็บให้อัตโนมัติครับ
+
+## ฟีเจอร์ (Hardware System)
 
 - ✅ รองรับเซนเซอร์จริง 6 ประเภท (Height, Velocity, Current, Voltage, Force, Soil Density)
 - ✅ ระบบ Calibration และ Conversion ข้อมูล
