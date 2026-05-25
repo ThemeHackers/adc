@@ -86,7 +86,10 @@ export default function RealTimeChart({
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
                 color: '#f8fafc'
               }}
-              formatter={(value: any) => [`${Number(value).toFixed(2)} ${unit}`, title]}
+              formatter={(value) => {
+                const numeric = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0);
+                return [`${numeric.toFixed(2)} ${unit}`, title];
+              }}
             />
             <Area
               type="monotone"
@@ -127,7 +130,10 @@ export default function RealTimeChart({
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
                 color: '#f8fafc'
               }}
-              formatter={(value: any) => [`${Number(value).toFixed(2)} ${unit}`, title]}
+              formatter={(value) => {
+                const numeric = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0);
+                return [`${numeric.toFixed(2)} ${unit}`, title];
+              }}
             />
             <Line
               type="monotone"

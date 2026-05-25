@@ -1,4 +1,4 @@
-import { SimulationConfig } from '@/components/ConfigurationPanel';
+import { SimulationConfig } from '@/lib/simulationConfig';
 
 export interface Scenario {
   id: string;
@@ -18,7 +18,7 @@ export const scenarios: Scenario[] = [
     name: 'Quick Demo',
     description: 'Fast demonstration of all states',
     config: {
-      pendulumMass: 500,
+      tamperMass: 500,
       maxHeight: 10,
       gravity: 9.81,
       motorPower: 650,
@@ -27,7 +27,11 @@ export const scenarios: Scenario[] = [
       batteryCapacity: 80,
       motorEfficiency: 0.85,
       generatorEfficiency: 0.90,
-      initialSoilDensity: 1600
+      initialSoilDensity: 1600,
+      soilType: 'sand',
+      dragCoefficient: 0.82,
+      gearRatio: 15.0,
+      loadResistance: 2.0,
     },
     duration: 30,
     states: [
@@ -43,7 +47,7 @@ export const scenarios: Scenario[] = [
     name: 'Full Cycle',
     description: 'Complete charging and discharging cycle',
     config: {
-      pendulumMass: 500,
+      tamperMass: 500,
       maxHeight: 15,
       gravity: 9.81,
       motorPower: 650,
@@ -52,7 +56,11 @@ export const scenarios: Scenario[] = [
       batteryCapacity: 50,
       motorEfficiency: 0.85,
       generatorEfficiency: 0.90,
-      initialSoilDensity: 1600
+      initialSoilDensity: 1600,
+      soilType: 'sand',
+      dragCoefficient: 0.82,
+      gearRatio: 15.0,
+      loadResistance: 2.0,
     },
     duration: 60,
     states: [
@@ -68,7 +76,7 @@ export const scenarios: Scenario[] = [
     name: 'Stress Test',
     description: 'Rapid state changes for system testing',
     config: {
-      pendulumMass: 750,
+      tamperMass: 750,
       maxHeight: 15,
       gravity: 9.81,
       motorPower: 1000,
@@ -77,7 +85,11 @@ export const scenarios: Scenario[] = [
       batteryCapacity: 30,
       motorEfficiency: 0.90,
       generatorEfficiency: 0.95,
-      initialSoilDensity: 1500
+      initialSoilDensity: 1500,
+      soilType: 'sand',
+      dragCoefficient: 0.82,
+      gearRatio: 15.0,
+      loadResistance: 2.0,
     },
     duration: 45,
     states: [
@@ -99,7 +111,7 @@ export const scenarios: Scenario[] = [
     name: 'Custom',
     description: 'Use current configuration',
     config: {
-      pendulumMass: 500,
+      tamperMass: 500,
       maxHeight: 15,
       gravity: 9.81,
       motorPower: 650,
@@ -108,7 +120,11 @@ export const scenarios: Scenario[] = [
       batteryCapacity: 50,
       motorEfficiency: 0.85,
       generatorEfficiency: 0.90,
-      initialSoilDensity: 1600
+      initialSoilDensity: 1600,
+      soilType: 'sand',
+      dragCoefficient: 0.82,
+      gearRatio: 15.0,
+      loadResistance: 2.0,
     },
     duration: 0,
     states: []

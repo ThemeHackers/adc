@@ -85,7 +85,7 @@ export default function EnergyMetrics({
       glowColor: 'rgba(16,185,129,0.15)',
       iconBg: 'bg-emerald-500/10',
       iconBorder: 'border-emerald-500/20',
-      format: (v: number) => `฿${v.toFixed(2)}`
+      format: (v: number) => `THB ${v.toFixed(2)}`
     }
   ];
   
@@ -140,25 +140,25 @@ export default function EnergyMetrics({
       <div className="cyber-glass rounded-xl border border-emerald-500/25 p-4 shadow-lg">
         <div className="mb-3">
           <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Thailand Electricity Bill Estimate</div>
-          <div className="mt-1 text-2xl font-black text-emerald-400" style={{ fontFamily: 'var(--font-mono), monospace' }}>฿{estimatedConsumptionCostTHB.toFixed(2)}</div>
+          <div className="mt-1 text-2xl font-black text-emerald-400" style={{ fontFamily: 'var(--font-mono), monospace' }}>THB {estimatedConsumptionCostTHB.toFixed(2)}</div>
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-800/80 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
           <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 flex flex-col justify-between">
             <span className="text-slate-500 block mb-0.5">Value</span>
-            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">฿{estimatedEnergyValueTHB.toFixed(2)}</span>
+            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">THB {estimatedEnergyValueTHB.toFixed(2)}</span>
           </div>
           <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 flex flex-col justify-between">
             <span className="text-slate-500 block mb-0.5">Bill</span>
-            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">฿{estimatedConsumptionCostTHB.toFixed(2)}</span>
+            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">THB {estimatedConsumptionCostTHB.toFixed(2)}</span>
           </div>
           <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 flex flex-col justify-between">
             <span className="text-slate-500 block mb-0.5">Net</span>
-            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">฿{estimatedNetValueTHB.toFixed(2)}</span>
+            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">THB {estimatedNetValueTHB.toFixed(2)}</span>
           </div>
           <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 flex flex-col justify-between">
             <span className="text-slate-500 block mb-0.5">Rate</span>
-            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">฿{electricityRateTHBPerKWh.toFixed(2)}/u</span>
+            <span className="text-slate-100 font-mono text-[11px] sm:text-xs">THB {electricityRateTHBPerKWh.toFixed(2)}/u</span>
           </div>
         </div>
       </div>

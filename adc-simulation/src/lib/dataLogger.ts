@@ -1,11 +1,12 @@
 import { THAI_LARGE_BUSINESS_AVERAGE_TARIFF_2026 } from './electricityTariff';
+import { normalizeTamperFields } from './tamperCompatibility';
 
 export interface SimulationLogEntry {
   timestamp: number;
   time: number;
   state: string;
-  pendulumHeight: number;
-  pendulumVelocity: number;
+  tamperHeight: number;
+  tamperVelocity: number;
   potentialEnergy: number;
   kineticEnergy: number;
   totalEnergy: number;
@@ -22,9 +23,9 @@ export interface SimulationLogEntry {
 }
 
 export interface SimulationSample {
-  pendulumHeight: number;
-  pendulumVelocity: number;
-  pendulumMass: number;
+  tamperHeight: number;
+  tamperVelocity: number;
+  tamperMass: number;
   potentialEnergy: number;
   kineticEnergy: number;
   totalEnergy: number;
@@ -41,6 +42,12 @@ export interface SimulationSample {
   state: string;
   time: number;
 }
+
+type LegacySimulationSample = Omit<SimulationSample, 'tamperHeight' | 'tamperVelocity' | 'tamperMass'> & {
+  pendulumHeight: number;
+  pendulumVelocity: number;
+  pendulumMass: number;
+};
 
 export interface SimulationStatistics {
   sampleCount: number;
@@ -82,26 +89,36 @@ export class DataLogger {
     this.maxLogs = maxLogs;
   }
   
-  public log(data: SimulationSample): void {
+  public log(data: SimulationSample | LegacySimulationSample): void {
+    const normalized = normalizeTamperFields(data);
+
+    if (
+      normalized.tamperHeight === undefined ||
+      normalized.tamperVelocity === undefined ||
+      normalized.tamperMass === undefined
+    ) {
+      return;
+    }
+
     const entry: SimulationLogEntry = {
       timestamp: Date.now(),
-      time: data.time,
-      state: data.state,
-      pendulumHeight: data.pendulumHeight,
-      pendulumVelocity: data.pendulumVelocity,
-      potentialEnergy: data.potentialEnergy,
-      kineticEnergy: data.kineticEnergy,
-      totalEnergy: data.totalEnergy,
-      solarPower: data.solarPower,
-      motorPower: data.motorPower,
-      generatorPower: data.generatorPower,
-      loadPower: data.loadPower,
-      batteryVoltage: data.batteryVoltage,
-      batteryCapacity: data.batteryCapacity,
-      batteryCurrent: data.batteryCurrent,
-      soilDensity: data.soilDensity,
-      soilCompaction: data.soilCompaction,
-      impactCount: data.impactCount
+      time: normalized.time,
+      state: normalized.state,
+      tamperHeight: normalized.tamperHeight,
+      tamperVelocity: normalized.tamperVelocity,
+      potentialEnergy: normalized.potentialEnergy,
+      kineticEnergy: normalized.kineticEnergy,
+      totalEnergy: normalized.totalEnergy,
+      solarPower: normalized.solarPower,
+      motorPower: normalized.motorPower,
+      generatorPower: normalized.generatorPower,
+      loadPower: normalized.loadPower,
+      batteryVoltage: normalized.batteryVoltage,
+      batteryCapacity: normalized.batteryCapacity,
+      batteryCurrent: normalized.batteryCurrent,
+      soilDensity: normalized.soilDensity,
+      soilCompaction: normalized.soilCompaction,
+      impactCount: normalized.impactCount
     };
     
     this.logs.push(entry);

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 
-
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    connectedClients: 0,
-    timestamp: Date.now()
+    service: 'adc-simulation',
+    timestamp: Date.now(),
   });
 }

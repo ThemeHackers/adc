@@ -2,32 +2,24 @@
 
 import React, { useState } from 'react';
 import { Settings, Save, RotateCcw } from 'lucide-react';
+import { SimulationConfig } from '@/lib/simulationConfig';
 
 interface ConfigurationPanelProps {
   config: SimulationConfig;
-  onConfigChange: (config: SimulationConfig) => void;
-  onReset: () => void;
+  onConfigChange: (config: SimulationConfig) => Promise<boolean>;
+  onReset: () => Promise<void>;
+  isSaving: boolean;
+  saveState: 'idle' | 'saved' | 'error';
   isOpen: boolean;
   onToggle: () => void;
-}
-
-export interface SimulationConfig {
-  pendulumMass: number;
-  maxHeight: number;
-  gravity: number;
-  motorPower: number;
-  solarPower: number;
-  batteryVoltage: number;
-  batteryCapacity: number;
-  motorEfficiency: number;
-  generatorEfficiency: number;
-  initialSoilDensity: number;
 }
 
 export default function ConfigurationPanel({
   config,
   onConfigChange,
   onReset,
+  isSaving,
+  saveState,
   isOpen,
   onToggle
 }: ConfigurationPanelProps) {
@@ -37,14 +29,21 @@ export default function ConfigurationPanel({
     if (isNaN(value)) return;
     setLocalConfig(prev => ({ ...prev, [key]: value }));
   };
-  
-  const handleSave = () => {
-    onConfigChange(localConfig);
+
+  const handleSoilTypeChange = (value: string) => {
+    setLocalConfig(prev => ({ ...prev, soilType: value as any }));
   };
   
-  const handleResetConfig = () => {
-    onReset();
-    setLocalConfig(config);
+  const handleSave = async () => {
+    const isSuccess = await onConfigChange(localConfig);
+
+    if (isSuccess) {
+      onToggle();
+    }
+  };
+  
+  const handleResetConfig = async () => {
+    await onReset();
   };
   
   if (!isOpen) {
@@ -88,22 +87,22 @@ export default function ConfigurationPanel({
         
         {/* Configuration Form */}
         <div className="p-5 space-y-6">
-          {/* Pendulum Settings */}
+          {/* Tamper Settings */}
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-blue-400 flex items-center gap-2">
               <span className="w-1.5 h-4 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]"></span>
-              Pendulum Dynamics
+              Tamper Dynamics
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Pendulum Mass (kg)
+                  Tamper Mass (kg)
                 </label>
                 <input
                   type="number"
-                  value={localConfig.pendulumMass || ''}
-                  onChange={(e) => handleChange('pendulumMass', parseFloat(e.target.value))}
+                  value={localConfig.tamperMass || ''}
+                  onChange={(e) => handleChange('tamperMass', parseFloat(e.target.value))}
                   className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
                   step="10"
                 />
@@ -134,7 +133,46 @@ export default function ConfigurationPanel({
                   step="0.1"
                 />
               </div>
-              
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Drag Coefficient (Cd)
+                </label>
+                <input
+                  type="number"
+                  value={localConfig.dragCoefficient || ''}
+                  onChange={(e) => handleChange('dragCoefficient', parseFloat(e.target.value))}
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
+                  step="0.05"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Soil Settings */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-amber-500 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-amber-500 rounded-full shadow-[0_0_8px_#f59e0b]"></span>
+              Soil Mechanics
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Soil Type
+                </label>
+                <select
+                  value={localConfig.soilType}
+                  onChange={(e) => handleSoilTypeChange(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 text-slate-100 font-medium text-sm cursor-pointer"
+                >
+                  <option className="bg-slate-900" value="sand">Sand</option>
+                  <option className="bg-slate-900" value="clay">Clay</option>
+                  <option className="bg-slate-900" value="gravel">Gravel</option>
+                  <option className="bg-slate-900" value="loam">Loam</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Initial Soil Density (kg/m³)
@@ -143,7 +181,7 @@ export default function ConfigurationPanel({
                   type="number"
                   value={localConfig.initialSoilDensity || ''}
                   onChange={(e) => handleChange('initialSoilDensity', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 text-slate-100 font-mono text-sm"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 text-slate-100 font-mono text-sm"
                   step="10"
                 />
               </div>
@@ -213,13 +251,39 @@ export default function ConfigurationPanel({
                   max="100"
                 />
               </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Generator Gear Ratio
+                </label>
+                <input
+                  type="number"
+                  value={localConfig.gearRatio || ''}
+                  onChange={(e) => handleChange('gearRatio', parseFloat(e.target.value))}
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 text-slate-100 font-mono text-sm"
+                  step="0.5"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Electrical Load Resistance (Ω)
+                </label>
+                <input
+                  type="number"
+                  value={localConfig.loadResistance || ''}
+                  onChange={(e) => handleChange('loadResistance', parseFloat(e.target.value))}
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 text-slate-100 font-mono text-sm"
+                  step="0.1"
+                />
+              </div>
             </div>
           </div>
           
           {/* Battery Settings */}
           <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-amber-500 rounded-full shadow-[0_0_8px_#f59e0b]"></span>
+            <h3 className="text-xs font-black uppercase tracking-wider text-purple-400 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-purple-500 rounded-full shadow-[0_0_8px_#8b5cf6]"></span>
               Accumulator System
             </h3>
             
@@ -231,7 +295,7 @@ export default function ConfigurationPanel({
                 <select
                   value={localConfig.batteryVoltage}
                   onChange={(e) => handleChange('batteryVoltage', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 text-slate-100 font-medium text-sm cursor-pointer"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/10 text-slate-100 font-medium text-sm cursor-pointer"
                 >
                   <option className="bg-slate-900" value={24}>24V DC</option>
                   <option className="bg-slate-900" value={48}>48V DC</option>
@@ -246,7 +310,7 @@ export default function ConfigurationPanel({
                   type="number"
                   value={localConfig.batteryCapacity || ''}
                   onChange={(e) => handleChange('batteryCapacity', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 text-slate-100 font-mono text-sm"
+                  className="w-full px-4 py-2 bg-slate-950/60 border border-slate-800/80 rounded-xl focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/10 text-slate-100 font-mono text-sm"
                   step="1"
                   min="0"
                   max="100"
@@ -261,15 +325,17 @@ export default function ConfigurationPanel({
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-blue-500/10 cursor-pointer border border-blue-500/20"
+              disabled={isSaving}
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-700 disabled:to-slate-800 text-white py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-blue-500/10 cursor-pointer disabled:cursor-not-allowed border border-blue-500/20"
             >
               <Save className="w-4 h-4" />
-              Save Configuration
+              {isSaving ? 'Saving...' : saveState === 'saved' ? 'Save Successfully' : saveState === 'error' ? 'Save Failed' : 'Save Configuration'}
             </button>
             
             <button
               onClick={handleResetConfig}
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-slate-200 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg cursor-pointer border border-slate-700/20"
+              disabled={isSaving}
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 disabled:from-slate-800 disabled:to-slate-800 text-slate-200 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg cursor-pointer disabled:cursor-not-allowed border border-slate-700/20"
             >
               <RotateCcw className="w-4 h-4" />
               Reset to Default

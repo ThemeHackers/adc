@@ -8,7 +8,7 @@ interface PitVisualizationProps {
   soilCompaction: number;
   soilDensity: number;
   impactCount: number;
-  pendulumVelocity: number;
+  tamperVelocity: number;
   solarPower: number;
   motorPower: number;
   generatorPower: number;
@@ -20,8 +20,11 @@ interface PitVisualizationProps {
   kineticEnergy: number;
   totalEnergy: number;
   viewMode?: '2d' | '3d';
-  pendulumMass: number;
-  onPendulumClick?: () => void;
+  tamperMass: number;
+  impactForce?: number;
+  craterDepth?: number;
+  contactPressure?: number;
+  onTamperClick?: () => void;
   onSoilClick?: () => void;
   onHeightClick?: () => void;
   onStateClick?: () => void;
@@ -34,7 +37,7 @@ export default function PitVisualization({
   soilCompaction,
   soilDensity,
   impactCount,
-  pendulumVelocity,
+  tamperVelocity,
   solarPower,
   motorPower,
   generatorPower,
@@ -46,8 +49,11 @@ export default function PitVisualization({
   kineticEnergy,
   totalEnergy,
   viewMode = '3d',
-  pendulumMass,
-  onPendulumClick,
+  tamperMass,
+  impactForce = 0,
+  craterDepth = 0,
+  contactPressure = 0,
+  onTamperClick,
   onSoilClick,
   onHeightClick,
   onStateClick,
@@ -59,7 +65,6 @@ export default function PitVisualization({
   const heightRatio = clampedHeight / maxHeight;
   const compactedRatio = Math.max(0, Math.min(soilCompaction, 100)) / 100;
   const batteryRatio = Math.max(0, Math.min(batteryCapacity, 100)) / 100;
-  const batteryFlowLabel = state === 'CHARGING' ? 'Charging Current' : state === 'DISCHARGING' ? 'Recovery Current' : 'System Current';
   const sceneWidth = 1000;
   const sceneHeight = 580;
   const bobX = is3d ? 520 : 500;
@@ -108,7 +113,7 @@ export default function PitVisualization({
     }
   })();
   
-  const pendulumColor = stateMeta.color;
+  const tamperColor = stateMeta.color;
   
   return (
     <div className={`relative flex h-auto flex-col rounded-2xl border text-slate-100 shadow-2xl cyber-glass border-slate-800 bg-slate-950/30 overflow-hidden`}>
@@ -121,9 +126,58 @@ export default function PitVisualization({
           viewBox={`0 0 ${sceneWidth} ${sceneHeight}`}
           className="absolute inset-0 h-full w-full"
           role="img"
-          aria-label="Live pendulum and soil visualization"
+          aria-label="Live tamper and soil visualization"
         >
         <defs>
+          <style>{`
+            @keyframes rotate-pulley-ccw {
+              from { transform: rotate(360deg); }
+              to { transform: rotate(0deg); }
+            }
+            @keyframes rotate-pulley-cw {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            @keyframes solar-flow {
+              to { stroke-dashoffset: -20; }
+            }
+            @keyframes gen-flow {
+              to { stroke-dashoffset: 20; }
+            }
+            @keyframes shockwave-expand {
+              0% { rx: 10px; ry: 2px; opacity: 1; stroke-width: 6px; }
+              100% { rx: 200px; ry: 40px; opacity: 0; stroke-width: 0.5px; }
+            }
+            @keyframes ejecta-left {
+              0% { transform: translate(0, 0) scale(1); opacity: 1; }
+              100% { transform: translate(-80px, -50px) scale(0.2); opacity: 0; }
+            }
+            @keyframes ejecta-right {
+              0% { transform: translate(0, 0) scale(1); opacity: 1; }
+              100% { transform: translate(80px, -50px) scale(0.2); opacity: 0; }
+            }
+            .animate-pulley-ccw {
+              animation: rotate-pulley-ccw 1.5s linear infinite;
+            }
+            .animate-pulley-cw {
+              animation: rotate-pulley-cw 1s linear infinite;
+            }
+            .flow-solar {
+              animation: solar-flow 0.8s linear infinite;
+            }
+            .flow-gen {
+              animation: gen-flow 0.6s linear infinite;
+            }
+            .shockwave-anim {
+              animation: shockwave-expand 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+            }
+            .ejecta-l {
+              animation: ejecta-left 0.45s ease-out infinite;
+            }
+            .ejecta-r {
+              animation: ejecta-right 0.45s ease-out infinite;
+            }
+          `}</style>
           <linearGradient id="skyGradient" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="#0f172a" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#020617" stopOpacity="0.8" />
@@ -142,14 +196,14 @@ export default function PitVisualization({
             <stop offset="100%" stopColor="#475569" />
           </linearGradient>
           <linearGradient id="cylinderBodyGradient" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor={pendulumColor} stopOpacity="0.95" />
+            <stop offset="0%" stopColor={tamperColor} stopOpacity="0.95" />
             <stop offset="25%" stopColor="#ffffff" stopOpacity="0.55" />
-            <stop offset="65%" stopColor={pendulumColor} />
+            <stop offset="65%" stopColor={tamperColor} />
             <stop offset="100%" stopColor="#020617" stopOpacity="0.95" />
           </linearGradient>
           <linearGradient id="cylinderTopGradient" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
-            <stop offset="100%" stopColor={pendulumColor} />
+            <stop offset="100%" stopColor={tamperColor} />
           </linearGradient>
           <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
             <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#020617" floodOpacity="0.7" />
@@ -265,6 +319,60 @@ export default function PitVisualization({
           );
         })}
 
+        {/* Solar HUD (Top-Left) */}
+        <g transform="translate(40, 40)" opacity="0.85">
+          <rect x="0" y="0" width="135" height="44" rx="8" fill="#030712" fillOpacity="0.75" stroke="#10b981" strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 6px rgba(16,185,129,0.15))' }} />
+          <g transform="translate(12, 12)">
+            {/* Grid Icon */}
+            <rect x="0" y="0" width="8" height="8" fill="#10b981" rx="1.5" />
+            <rect x="11" y="0" width="8" height="8" fill="#10b981" rx="1.5" />
+            <rect x="0" y="11" width="8" height="8" fill="#10b981" rx="1.5" />
+            <rect x="11" y="11" width="8" height="8" fill="#10b981" rx="1.5" />
+          </g>
+          <text x="38" y="20" fill="#cbd5e1" fontSize="9" fontWeight="900" letterSpacing="0.08em">SOLAR ARRAY</text>
+          <text x="38" y="32" fill="#10b981" fontSize="10" fontWeight="bold" fontFamily="var(--font-mono), monospace">{solarPower.toFixed(0)} W</text>
+        </g>
+
+        {/* Battery HUD (Top-Right) */}
+        <g transform="translate(825, 40)" opacity="0.85">
+          <rect x="0" y="0" width="135" height="44" rx="8" fill="#030712" fillOpacity="0.75" stroke="#8b5cf6" strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 6px rgba(139,92,246,0.15))' }} />
+          <g transform="translate(12, 14)">
+            {/* Battery Icon */}
+            <rect x="0" y="0" width="18" height="11" fill="none" stroke="#8b5cf6" strokeWidth="1.5" rx="2" />
+            <rect x="20" y="3" width="2" height="5" fill="#8b5cf6" rx="0.5" />
+            <rect x="2.5" y="2" width={13 * (batteryCapacity / 100)} height="7" fill="#8b5cf6" />
+          </g>
+          <text x="40" y="20" fill="#cbd5e1" fontSize="9" fontWeight="900" letterSpacing="0.08em">BATTERY BANK</text>
+          <text x="40" y="32" fill="#8b5cf6" fontSize="10" fontWeight="bold" fontFamily="var(--font-mono), monospace">{batteryCapacity.toFixed(1)}%</text>
+        </g>
+
+        {/* Solar laser path wire */}
+        <path d={`M 175 62 L 320 62 L ${bobX - 30} ${topAnchorY}`} fill="none" stroke="#1e293b" strokeWidth="2.5" />
+        {state === 'CHARGING' && (
+          <path 
+            d={`M 175 62 L 320 62 L ${bobX - 30} ${topAnchorY}`} 
+            fill="none" 
+            stroke="#10b981" 
+            strokeWidth="2.5" 
+            strokeDasharray="8, 8" 
+            className="flow-solar" 
+          />
+        )}
+
+        {/* Battery laser path wire */}
+        <path d={`M ${bobX + 30} ${topAnchorY} L 680 62 L 825 62`} fill="none" stroke="#1e293b" strokeWidth="2.5" />
+        {state === 'DISCHARGING' && (
+          <path 
+            d={`M ${bobX + 30} ${topAnchorY} L 680 62 L 825 62`} 
+            fill="none" 
+            stroke="#3b82f6" 
+            strokeWidth="2.5" 
+            strokeDasharray="8, 8" 
+            className="flow-gen" 
+            style={{ direction: 'rtl' }}
+          />
+        )}
+
         {/* Hanging rope */}
         <line
           x1={bobX}
@@ -288,10 +396,20 @@ export default function PitVisualization({
           strokeLinecap="round"
         />
 
-        {/* Top anchor circle */}
-        <circle cx={bobX} cy={topAnchorY} r="9" fill="#94a3b8" stroke="#334155" strokeWidth="3" />
+        {/* Winch Pulley Wheel with spokes and rotation */}
+        <g 
+          className={state === 'CHARGING' ? 'animate-pulley-ccw' : state === 'DISCHARGING' ? 'animate-pulley-cw' : ''}
+          style={{ transformOrigin: `${bobX}px ${topAnchorY}px` }}
+        >
+          <circle cx={bobX} cy={topAnchorY} r="18" fill="#1e293b" stroke="#475569" strokeWidth="3" />
+          <circle cx={bobX} cy={topAnchorY} r="14" fill="#334155" />
+          {/* Wheel spokes */}
+          <line x1={bobX - 14} y1={topAnchorY} x2={bobX + 14} y2={topAnchorY} stroke="#475569" strokeWidth="2.5" />
+          <line x1={bobX} y1={topAnchorY - 14} x2={bobX} y2={topAnchorY + 14} stroke="#475569" strokeWidth="2.5" />
+          <circle cx={bobX} cy={topAnchorY} r="4" fill="#0f172a" />
+        </g>
 
-        {/* Pendulum weight cylinder */}
+        {/* Tamper weight cylinder */}
         <g transform={is3d ? `translate(12, 6)` : 'translate(0, 0)'}>
           {/* Glowing bottom shadow */}
           <ellipse
@@ -311,14 +429,14 @@ export default function PitVisualization({
                 L ${bobX + bobRadius} ${bobY - cylinderHeight / 2}
                 A ${bobRadius} ${bobRadius * ryRatio} 0 0 0 ${bobX - bobRadius} ${bobY - cylinderHeight / 2} Z`}
             fill="url(#cylinderBodyGradient)"
-            stroke={pendulumColor}
+            stroke={tamperColor}
             strokeWidth="4"
             filter="url(#softShadow)"
             opacity="0.98"
             className="cursor-pointer"
-            onClick={onPendulumClick}
+            onClick={onTamperClick}
             style={{ 
-              filter: state === 'IMPACT' ? `drop-shadow(0 0 8px ${pendulumColor})` : 'none',
+              filter: state === 'IMPACT' ? `drop-shadow(0 0 8px ${tamperColor})` : 'none',
               transition: 'stroke 0.3s ease, filter 0.3s ease'
             }}
           />
@@ -329,10 +447,10 @@ export default function PitVisualization({
             rx={bobRadius}
             ry={bobRadius * ryRatio}
             fill="url(#cylinderTopGradient)"
-            stroke={pendulumColor}
+            stroke={tamperColor}
             strokeWidth="2"
             className="cursor-pointer"
-            onClick={onPendulumClick}
+            onClick={onTamperClick}
           />
           {/* Top Face Inner Rim (Glowing effect) */}
           <ellipse
@@ -348,11 +466,23 @@ export default function PitVisualization({
           />
         </g>
 
-        {/* Impact shockwaves */}
+        {/* Animated Impact Shockwaves and Soil Ejecta Splash */}
         {state === 'IMPACT' && (
           <g>
-            <circle cx={bobX + (is3d ? 10 : 0)} cy={groundY - 6} r={is3d ? '104' : '92'} fill="none" stroke="#f43f5e" strokeOpacity="0.8" strokeWidth="4" style={{ filter: 'drop-shadow(0 0 4px #f43f5e)' }} />
-            <circle cx={bobX + (is3d ? 10 : 0)} cy={groundY - 6} r={is3d ? '148' : '132'} fill="none" stroke="#f43f5e" strokeOpacity="0.3" strokeWidth="2" style={{ filter: 'drop-shadow(0 0 2px #f43f5e)' }} />
+            <ellipse cx={bobX + (is3d ? 10 : 0)} cy={groundY} rx="120" ry="24" fill="none" stroke="#f43f5e" strokeWidth="4" className="shockwave-anim" style={{ transformOrigin: `${bobX + (is3d ? 10 : 0)}px ${groundY}px` }} />
+            <ellipse cx={bobX + (is3d ? 10 : 0)} cy={groundY} rx="120" ry="24" fill="none" stroke="#f43f5e" strokeWidth="2" className="shockwave-anim" style={{ transformOrigin: `${bobX + (is3d ? 10 : 0)}px ${groundY}px`, animationDelay: '0.2s' }} />
+            
+            {/* Soil Ejecta Dust Sparks */}
+            <g className="ejecta-l" style={{ transformOrigin: `${bobX - 20}px ${groundY - 10}px` }}>
+              <circle cx={bobX - 30} cy={groundY - 8} r="5.5" fill="#b45309" />
+              <circle cx={bobX - 55} cy={groundY - 20} r="4" fill="#78350f" />
+              <circle cx={bobX - 75} cy={groundY - 32} r="2.5" fill="#451a03" />
+            </g>
+            <g className="ejecta-r" style={{ transformOrigin: `${bobX + 40}px ${groundY - 10}px` }}>
+              <circle cx={bobX + 30} cy={groundY - 8} r="5.5" fill="#b45309" />
+              <circle cx={bobX + 55} cy={groundY - 20} r="4" fill="#78350f" />
+              <circle cx={bobX + 75} cy={groundY - 32} r="2.5" fill="#451a03" />
+            </g>
           </g>
         )}
 
@@ -388,14 +518,14 @@ export default function PitVisualization({
             type="button"
             onClick={onStateClick}
             className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
-            title="Click for state details"
+            title="Click for impact details"
           >
-            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">System State</div>
-            <div className="mt-2 text-base sm:text-lg font-black leading-none tracking-wider uppercase" style={{ color: pendulumColor }}>
-              {state}
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Impact Force</div>
+            <div className="mt-2 text-2xl font-black text-rose-500 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+              {(impactForce / 1000).toFixed(1)}<span className="ml-0.5 text-xs font-semibold text-slate-400">kN</span>
             </div>
-            <div className="mt-2 inline-flex w-fit rounded-full px-2.5 py-0.5 text-[9px] font-bold text-slate-950 uppercase tracking-wide" style={{ backgroundColor: pendulumColor }}>
-              {stateMeta.label}
+            <div className="mt-2 text-[10px] text-slate-400 font-mono">
+              Crater: {(craterDepth * 100).toFixed(1)} cm
             </div>
           </button>
 
@@ -431,7 +561,7 @@ export default function PitVisualization({
 
           <button
             type="button"
-            onClick={onPendulumClick}
+            onClick={onTamperClick}
             className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
             title="Click for energy details"
           >
@@ -447,14 +577,12 @@ export default function PitVisualization({
 
         <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3">
-            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">{batteryFlowLabel}</div>
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Battery Charge</div>
             <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{batteryCapacity.toFixed(1)}<span className="ml-0.5 text-xs font-semibold text-slate-400">%</span></div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-900 p-0.5">
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-300" style={{ width: `${batteryRatio * 100}%` }} />
             </div>
-            <div className="mt-2 text-[10px] text-slate-400 font-mono">
-              {batteryVoltage.toFixed(0)}V · {state === 'DISCHARGING' ? '↺' : batteryCurrent > 0 ? '+' : ''}{Math.abs(batteryCurrent).toFixed(1)}A
-            </div>
+            <div className="mt-2 text-[10px] text-slate-400 font-mono">{batteryVoltage.toFixed(0)}V · {batteryCurrent.toFixed(1)}A</div>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3">
@@ -470,14 +598,14 @@ export default function PitVisualization({
 
           <button
             type="button"
-            onClick={onPendulumClick}
+            onClick={onTamperClick}
             className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-900/50 hover:border-slate-700/50 cursor-pointer"
-            title="Click for pendulum details"
+            title="Click for tamper details"
           >
             <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Telemetry Velocity</div>
-            <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{pendulumVelocity.toFixed(2)}<span className="ml-0.5 text-xs font-semibold text-slate-400">m/s</span></div>
+            <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{tamperVelocity.toFixed(2)}<span className="ml-0.5 text-xs font-semibold text-slate-400">m/s</span></div>
             <div className="text-[9px] sm:text-[10px] text-slate-350 font-semibold mt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
-              <span>Mass: {pendulumMass.toFixed(0)} kg</span>
+              <span>Mass: {tamperMass.toFixed(0)} kg</span>
               <span className="text-slate-600">•</span>
               <span>Impacts: {impactCount}</span>
             </div>
@@ -502,7 +630,7 @@ export default function PitVisualization({
             className="inline-flex items-center gap-2 font-bold text-slate-300 transition-colors hover:text-amber-200 cursor-pointer"
             title="Click for soil details"
           >
-            <span className="inline-block h-2 w-2 rounded-full animate-ping" style={{ backgroundColor: pendulumColor }} />
+            <span className="inline-block h-2 w-2 rounded-full animate-ping" style={{ backgroundColor: tamperColor }} />
             Soil layer cutaway analysis profile
           </button>
           <span>Compaction dynamically raises visible mass density.</span>

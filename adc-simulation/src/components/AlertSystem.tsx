@@ -48,9 +48,11 @@ export default function AlertSystem({ alerts, onDismiss }: AlertSystemProps) {
   }, [alerts, onDismiss]);
 
   useEffect(() => {
+    const timers = dismissTimersRef.current;
+
     return () => {
-      dismissTimersRef.current.forEach(timerId => window.clearTimeout(timerId));
-      dismissTimersRef.current.clear();
+      timers.forEach(timerId => window.clearTimeout(timerId));
+      timers.clear();
     };
   }, []);
 

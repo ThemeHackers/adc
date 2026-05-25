@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Play, Pause, RotateCcw, Zap, Sun, Battery, Activity } from 'lucide-react';
+import { Scenario } from '@/lib/scenarios';
 
 interface ControlPanelProps {
   currentState: string;
@@ -9,6 +10,9 @@ interface ControlPanelProps {
   onReset: () => void;
   isRunning: boolean;
   onToggleRunning: () => void;
+  scenarios: Scenario[];
+  onSelectScenario: (scenario: Scenario) => void;
+  activeScenarioId?: string;
 }
 
 export default function ControlPanel({
@@ -16,7 +20,10 @@ export default function ControlPanel({
   onStateChange,
   onReset,
   isRunning,
-  onToggleRunning
+  onToggleRunning,
+  scenarios,
+  onSelectScenario,
+  activeScenarioId
 }: ControlPanelProps) {
   const states = [
     { id: 'IDLE', label: 'Idle', icon: Activity, activeClass: 'bg-slate-700/80 border-slate-500 shadow-[0_0_12px_rgba(148,163,184,0.3)]', defaultClass: 'border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200' },
@@ -84,6 +91,29 @@ export default function ControlPanel({
           <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Reset System</span>
         </button>
+      </div>
+
+      {/* Demo Scenario Presets */}
+      <div className="mt-4 pt-4 border-t border-slate-800/80 space-y-2">
+        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Demo Workflows</div>
+        <div className="grid grid-cols-2 gap-2">
+          {scenarios.map((sc) => (
+            <button
+              key={sc.id}
+              onClick={() => onSelectScenario(sc)}
+              className={`p-2 rounded-xl border text-left transition-all duration-300 cursor-pointer flex flex-col justify-between h-[68px] ${
+                activeScenarioId === sc.id
+                  ? 'bg-indigo-500/15 border-indigo-500 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.2)]'
+                  : 'bg-slate-950/40 border-slate-850 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}
+              type="button"
+              title={sc.description}
+            >
+              <div className="font-bold text-[10px] sm:text-[11px] truncate w-full">{sc.name}</div>
+              <div className="text-[8px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">{sc.description}</div>
+            </button>
+          ))}
+        </div>
       </div>
       
       {/* Current state indicator */}

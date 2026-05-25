@@ -49,9 +49,11 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
     }] : [])
   ];
   
-  const calculateStats = (key: string) => {
+  type ComparisonMetricKey = 'energy' | 'impacts' | 'compaction' | 'motorPower' | 'generatorPower' | 'battery' | 'density' | 'time' | 'consumed' | 'efficiency' | 'stability';
+
+  const calculateStats = (key: ComparisonMetricKey) => {
     if (comparisonData.length === 0) return { avg: 0, max: 0, min: 0 };
-    const values = comparisonData.map(d => d[key as keyof typeof d] as number);
+    const values = comparisonData.map(d => d[key]);
     return {
       avg: values.reduce((a, b) => a + b, 0) / values.length,
       max: Math.max(...values),
@@ -161,7 +163,10 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
                     borderRadius: '8px',
                     color: '#f8fafc'
                   }}
-                  formatter={(value: any) => [`${Number(value).toFixed(2)} kJ`, 'Energy']}
+                    formatter={(value) => {
+                      const numeric = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0);
+                      return [`${numeric.toFixed(2)} kJ`, 'Energy'];
+                    }}
                 />
                 <Bar dataKey="energy" fill="#8b5cf6" radius={[6, 6, 0, 0]} style={{ filter: 'drop-shadow(0 0 2px rgba(139,92,246,0.3))' }} />
               </BarChart>
@@ -212,7 +217,10 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
                       borderRadius: '8px',
                       color: '#f8fafc'
                     }}
-                    formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Battery']}
+                    formatter={(value) => {
+                      const numeric = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0);
+                      return [`${numeric.toFixed(1)}%`, 'Battery'];
+                    }}
                   />
                   <Line type="monotone" dataKey="battery" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4, fill: '#f59e0b', strokeWidth: 1 }} style={{ filter: 'drop-shadow(0 0 2px rgba(245,158,11,0.3))' }} />
                 </LineChart>
@@ -239,7 +247,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
                       borderRadius: '8px',
                       color: '#f8fafc'
                     }}
-                    formatter={(value: any) => [value, 'Impacts']}
+                    formatter={(value) => [Array.isArray(value) ? (value[0] ?? 0) : (value ?? 0), 'Impacts']}
                   />
                   <Bar dataKey="impacts" fill="#f43f5e" radius={[4, 4, 0, 0]} style={{ filter: 'drop-shadow(0 0 2px rgba(244,63,94,0.3))' }} />
                 </BarChart>
@@ -263,7 +271,10 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
                       borderRadius: '8px',
                       color: '#f8fafc'
                     }}
-                    formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Compaction']}
+                    formatter={(value) => {
+                      const numeric = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0);
+                      return [`${numeric.toFixed(1)}%`, 'Compaction'];
+                    }}
                   />
                   <Line type="monotone" dataKey="compaction" stroke="#10b981" strokeWidth={2} dot={{ r: 4, fill: '#10b981', strokeWidth: 1 }} style={{ filter: 'drop-shadow(0 0 2px rgba(16,185,129,0.3))' }} />
                 </LineChart>

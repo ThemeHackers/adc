@@ -46,23 +46,23 @@ export interface Translations {
 
   systemStatus: string;
   simulationTime: string;
-  pendulumVelocity: string;
-  pendulumMass: string;
+  tamperVelocity: string;
+  tamperMass: string;
   systemState: string;
   
 
   chartTotalEnergy: string;
   generatorPower: string;
-  pendulumHeight: string;
+  tamperHeight: string;
   
 
   simulationConfiguration: string;
-  pendulumSettings: string;
+  tamperSettings: string;
   powerSystem: string;
   batterySystemConfig: string;
   saveConfiguration: string;
   resetToDefault: string;
-  pendulumMassConfig: string;
+  tamperMassConfig: string;
   maxHeight: string;
   gravity: string;
   initialSoilDensity: string;
@@ -141,21 +141,21 @@ export const translations: Record<Language, Translations> = {
     
     systemStatus: 'สถานะระบบ',
     simulationTime: 'เวลาจำลอง',
-    pendulumVelocity: 'ความเร็วลูกตุ้ม',
-    pendulumMass: 'มวลลูกตุ้ม',
+    tamperVelocity: 'ความเร็วลูกตุ้ม',
+    tamperMass: 'มวลลูกตุ้ม',
     systemState: 'สถานะระบบ',
     
     chartTotalEnergy: 'พลังงานรวม',
     generatorPower: 'พลังงานเครื่องกำเนิดไฟ',
-    pendulumHeight: 'ความสูงลูกตุ้ม',
+    tamperHeight: 'ความสูงลูกตุ้ม',
     
     simulationConfiguration: 'การตั้งค่าจำลอง',
-    pendulumSettings: 'การตั้งค่าลูกตุ้ม',
+    tamperSettings: 'การตั้งค่าลูกตุ้ม',
     powerSystem: 'ระบบพลังงาน',
     batterySystemConfig: 'ระบบแบตเตอรี่',
     saveConfiguration: 'บันทึกการตั้งค่า',
     resetToDefault: 'รีเซ็ตค่าเริ่มต้น',
-    pendulumMassConfig: 'มวลลูกตุ้ม (kg)',
+    tamperMassConfig: 'มวลลูกตุ้ม (kg)',
     maxHeight: 'ความสูงสูงสุด (m)',
     gravity: 'แรงโน้มถ่วง (m/s²)',
     initialSoilDensity: 'ความหนาแน่นดินเริ่มต้น (kg/m³)',
@@ -225,21 +225,21 @@ export const translations: Record<Language, Translations> = {
     
     systemStatus: 'System Status',
     simulationTime: 'Simulation Time',
-    pendulumVelocity: 'Pendulum Velocity',
-    pendulumMass: 'Pendulum Mass',
+    tamperVelocity: 'Tamper Velocity',
+    tamperMass: 'Tamper Mass',
     systemState: 'System State',
     
     chartTotalEnergy: 'Total Energy',
     generatorPower: 'Generator Power',
-    pendulumHeight: 'Pendulum Height',
+    tamperHeight: 'Tamper Height',
     
     simulationConfiguration: 'Simulation Configuration',
-    pendulumSettings: 'Pendulum Settings',
+    tamperSettings: 'Tamper Settings',
     powerSystem: 'Power System',
     batterySystemConfig: 'Battery System',
     saveConfiguration: 'Save Configuration',
     resetToDefault: 'Reset to Default',
-    pendulumMassConfig: 'Pendulum Mass (kg)',
+    tamperMassConfig: 'Tamper Mass (kg)',
     maxHeight: 'Max Height (m)',
     gravity: 'Gravity (m/s²)',
     initialSoilDensity: 'Initial Soil Density (kg/m³)',

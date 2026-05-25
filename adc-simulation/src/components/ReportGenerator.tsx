@@ -3,7 +3,7 @@
 import React from 'react';
 import { FileText, Download, Calendar } from 'lucide-react';
 import { SimulationStatistics } from '@/lib/dataLogger';
-import { SimulationConfig } from '@/components/ConfigurationPanel';
+import { SimulationConfig } from '@/lib/simulationConfig';
 
 interface ReportGeneratorProps {
   statistics: SimulationStatistics;
@@ -12,9 +12,12 @@ interface ReportGeneratorProps {
 }
 
 export default function ReportGenerator({ statistics, config, onGenerateReport }: ReportGeneratorProps) {
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => {
-    setMounted(true);
+  const reportDate = React.useMemo(() => {
+    const now = new Date();
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const year = now.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   }, []);
   
   const generatePDFReport = () => {
@@ -124,7 +127,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
       </div>
       <div class="stat-item">
         <div class="stat-label">Estimated Energy Value</div>
-        <div class="stat-value">฿${statistics.estimatedEnergyValueTHB.toFixed(2)}</div>
+        <div class="stat-value">THB ${statistics.estimatedEnergyValueTHB.toFixed(2)}</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Net Energy Balance</div>
@@ -132,11 +135,11 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
       </div>
       <div class="stat-item">
         <div class="stat-label">Estimated Electricity Bill</div>
-        <div class="stat-value">฿${statistics.estimatedConsumptionCostTHB.toFixed(2)}</div>
+        <div class="stat-value">THB ${statistics.estimatedConsumptionCostTHB.toFixed(2)}</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Estimated Net Value</div>
-        <div class="stat-value">฿${statistics.estimatedNetValueTHB.toFixed(2)}</div>
+        <div class="stat-value">THB ${statistics.estimatedNetValueTHB.toFixed(2)}</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Total Impacts</div>
@@ -163,7 +166,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
         <div class="stat-value">${statistics.finalSoilDensity.toFixed(0)} kg/m³</div>
       </div>
     </div>
-    <p style="color:#94a3b8;font-size:12px;margin-top:10px;">Energy-to-money conversion uses the ERC large-business average tariff of ฿${statistics.electricityRateTHBPerKWh.toFixed(2)} per kWh and applies it to total system usage (motor + load).</p>
+    <p style="color:#94a3b8;font-size:12px;margin-top:10px;">Energy-to-money conversion uses the ERC large-business average tariff of THB ${statistics.electricityRateTHBPerKWh.toFixed(2)} per kWh and applies it to total system usage (motor + load).</p>
   </div>
 
   <div class="section">
@@ -174,8 +177,8 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
         <th>Value</th>
       </tr>
       <tr>
-        <td>Pendulum Mass</td>
-        <td>${config.pendulumMass} kg</td>
+        <td>Tamper Mass</td>
+        <td>${config.tamperMass} kg</td>
       </tr>
       <tr>
         <td>Max Height</td>
@@ -243,7 +246,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium bg-slate-950/40 border border-slate-800/80 px-2.5 py-1.5 rounded-xl">
           <Calendar className="w-4 h-4 text-purple-400" />
-          {mounted ? new Date().toLocaleDateString() : ''}
+          {reportDate}
         </div>
       </div>
       

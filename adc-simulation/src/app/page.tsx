@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SimulationEngine, SimulationData, SimulationState } from '@/lib/simulation-engine';
 import { DataLogger, SimulationStatistics } from '@/lib/dataLogger';
-import { SimulationConfig } from '@/components/ConfigurationPanel';
+import { DEFAULT_SIMULATION_CONFIG, SimulationConfig } from '@/lib/simulationConfig';
+import { scenarios, ScenarioRunner, Scenario } from '@/lib/scenarios';
 import ConfigurationPanel from '@/components/ConfigurationPanel';
 import AlertSystem, { useAlertManager } from '@/components/AlertSystem';
 import PitVisualization from '@/components/PitVisualization';
@@ -15,8 +16,7 @@ import RealTimeChart from '@/components/RealTimeChart';
 import ReportGenerator from '@/components/ReportGenerator';
 import HistoricalComparison from '@/components/HistoricalComparison';
 import DetailedInfoPopup from '@/components/DetailedInfoPopup';
-import { HardwareClient, HardwareData } from '@/lib/hardwareClient';
-import { Download, History, Zap, Activity, Gauge, Droplet, Mountain, Clock, TrendingUp, Cpu, Server, Battery, Layers } from 'lucide-react';
+import { Download, History, Zap, Activity, Gauge, Droplet, Mountain, Clock, TrendingUp, Battery, Layers, Flame } from 'lucide-react';
 import { calculateCylinderVolume, calculateCylinderRadius, calculateCylinderHeight, calculateCylinderBottomArea } from '@/lib/formulas';
 
 type PopupItem = {
@@ -45,48 +45,22 @@ export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [visualizationMode, setVisualizationMode] = useState<'2d' | '3d'>('3d');
-  
 
-  const [hardwareMode, setHardwareMode] = useState(false);
-  const [hardwareClient] = useState(() => new HardwareClient());
-  
-
-  useEffect(() => {
-    if (hardwareMode) {
-      void hardwareClient.connect();
-      
-      hardwareClient.onData((hardwareData: HardwareData) => {
-        setData(hardwareData as SimulationData);
-        dataLogger.log(hardwareData);
-      });
-      
-      hardwareClient.onStateChange((state: string) => {
-        simulation.setState(state as SimulationState);
-      });
-      
-      return () => {
-        hardwareClient.disconnect();
-      };
-    } else {
-      hardwareClient.disconnect();
-    }
-  }, [hardwareMode, hardwareClient, simulation, dataLogger]);
-  const [config, setConfig] = useState<SimulationConfig>({
-    pendulumMass: 500,
-    maxHeight: 15,
-    gravity: 9.81,
-    motorPower: 650,
-    solarPower: 750,
-    batteryVoltage: 24,
-    batteryCapacity: 50,
-    motorEfficiency: 0.85,
-    generatorEfficiency: 0.90,
-    initialSoilDensity: 1600
-  });
+  const [config, setConfig] = useState<SimulationConfig>(DEFAULT_SIMULATION_CONFIG);
+  const [isConfigSaving, setIsConfigSaving] = useState(false);
+  const [configSaveState, setConfigSaveState] = useState<'idle' | 'saved' | 'error'>('idle');
   const [historicalData, setHistoricalData] = useState<HistoricalRun[]>([]);
   const [showHistorical, setShowHistorical] = useState(false);
   
+  const [scenarioRunner] = useState(() => new ScenarioRunner());
+  const [activeScenarioId, setActiveScenarioId] = useState<string>('custom');
 
+  useEffect(() => {
+    return () => {
+      scenarioRunner.stop();
+    };
+  }, [scenarioRunner]);
+  
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupTitle, setPopupTitle] = useState('');
   const [popupData, setPopupData] = useState<PopupData>({});
@@ -104,12 +78,15 @@ export default function Home() {
     const time = newData.time;
     setEnergyHistory(prev => [...prev.slice(-100), { time, value: newData.totalEnergy / 1000 }]);
     setPowerHistory(prev => [...prev.slice(-100), { time, value: newData.generatorPower }]);
-    setHeightHistory(prev => [...prev.slice(-100), { time, value: newData.pendulumHeight }]);
+    setHeightHistory(prev => [...prev.slice(-100), { time, value: newData.tamperHeight }]);
     
     if (newData.batteryCapacity < 20 && newData.batteryCapacity > 19) {
       addAlert('Low Battery!', 'warning');
     }
-    if (newData.pendulumHeight >= config.maxHeight * 0.99 && newData.pendulumHeight < config.maxHeight) {
+    if ((newData.batteryTemp ?? 25.0) > 45 && (newData.batteryTemp ?? 25.0) < 45.5) {
+      addAlert('Battery Overheating! High temperature warning.', 'error');
+    }
+    if (newData.tamperHeight >= config.maxHeight * 0.99 && newData.tamperHeight < config.maxHeight) {
       addAlert('Max Height Reached', 'info');
     }
   }, [simulation, dataLogger, config, addAlert]);
@@ -125,13 +102,58 @@ export default function Home() {
       if (interval) clearInterval(interval);
     };
   }, [isRunning, updateSimulation]);
-  
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSavedConfiguration = async () => {
+      try {
+        const response = await fetch('/api/config', { cache: 'no-store' });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch configuration');
+        }
+
+        const payload = await response.json() as { config?: SimulationConfig };
+        const loadedConfig = payload.config ?? DEFAULT_SIMULATION_CONFIG;
+
+        if (!isMounted) {
+          return;
+        }
+
+        simulation.applyConfiguration(loadedConfig);
+        setConfig(loadedConfig);
+        setData(simulation.getData());
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+
+        simulation.applyConfiguration(DEFAULT_SIMULATION_CONFIG);
+        setConfig(DEFAULT_SIMULATION_CONFIG);
+        setData(simulation.getData());
+      }
+    };
+
+    void loadSavedConfiguration();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [simulation]);
+
   const handleStateChange = (state: string) => {
+    if (activeScenarioId !== 'custom') {
+      scenarioRunner.stop();
+      setActiveScenarioId('custom');
+    }
     simulation.setState(state as SimulationState);
     setData(simulation.getData());
   };
   
   const handleReset = () => {
+    scenarioRunner.stop();
+    setActiveScenarioId('custom');
     simulation.reset();
     setData(simulation.getData());
     setEnergyHistory([]);
@@ -142,15 +164,65 @@ export default function Home() {
   };
   
   const handleToggleRunning = () => {
+    if (isRunning && activeScenarioId !== 'custom') {
+      scenarioRunner.stop();
+      setActiveScenarioId('custom');
+    }
     setIsRunning(!isRunning);
     if (!isRunning) {
       addAlert('Simulation started', 'success');
     }
   };
   
-  const handleConfigChange = (newConfig: SimulationConfig) => {
-    setConfig(newConfig);
-    addAlert('Configuration saved', 'success');
+  const handleConfigChange = async (newConfig: SimulationConfig): Promise<boolean> => {
+    if (activeScenarioId !== 'custom') {
+      scenarioRunner.stop();
+      setActiveScenarioId('custom');
+    }
+    if (isConfigSaving) {
+      return false;
+    }
+
+    setIsConfigSaving(true);
+    setConfigSaveState('idle');
+
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ config: newConfig })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save configuration');
+      }
+
+      const payload = await response.json() as { config?: SimulationConfig };
+      const savedConfig = payload.config ?? newConfig;
+
+      simulation.applyConfiguration(savedConfig);
+      setData(simulation.getData());
+      setConfig(savedConfig);
+      setConfigSaveState('saved');
+      addAlert('Save Successfully', 'success');
+      return true;
+    } catch {
+      setConfigSaveState('error');
+      addAlert('Unable to save configuration', 'error');
+      return false;
+    } finally {
+      setIsConfigSaving(false);
+    }
+  };
+
+  const handleResetConfiguration = async () => {
+    const resetSuccess = await handleConfigChange(DEFAULT_SIMULATION_CONFIG);
+
+    if (resetSuccess) {
+      addAlert('Configuration reset to default', 'info');
+    }
   };
   
   const handleExportCSV = () => {
@@ -161,6 +233,35 @@ export default function Home() {
   const handleExportJSON = () => {
     dataLogger.downloadJSON();
     addAlert('Data exported to JSON', 'success');
+  };
+  
+  const handleSelectScenario = (scenario: Scenario) => {
+    scenarioRunner.stop();
+    setActiveScenarioId(scenario.id);
+    
+    simulation.applyConfiguration(scenario.config);
+    setConfig(scenario.config);
+    setData(simulation.getData());
+    
+    if (scenario.id !== 'custom') {
+      setIsRunning(true);
+      scenarioRunner.startScenario(
+        scenario,
+        (nextState) => {
+          simulation.setState(nextState as SimulationState);
+          setData(simulation.getData());
+          addAlert(`Workflow state transitioned to: ${nextState}`, 'info');
+        },
+        () => {
+          setIsRunning(false);
+          setActiveScenarioId('custom');
+          addAlert('Demo workflow cycle completed', 'success');
+        }
+      );
+    } else {
+      setIsRunning(false);
+      addAlert('Switched to manual control scenario', 'info');
+    }
   };
   
   const handleSaveToHistory = () => {
@@ -174,9 +275,9 @@ export default function Home() {
     addAlert('Simulation saved to history', 'success');
   };
   
-  const handlePendulumClick = () => {
-    setPopupTitle('Pendulum Details (Solid Cylinder)');
-    const volume = calculateCylinderVolume(data.pendulumMass);
+  const handleTamperClick = () => {
+    setPopupTitle('Tamper Details (Solid Cylinder)');
+    const volume = calculateCylinderVolume(data.tamperMass);
     const radius = calculateCylinderRadius(volume);
     const cylinderHeightVal = calculateCylinderHeight(radius);
     const bottomArea = calculateCylinderBottomArea(radius);
@@ -184,7 +285,7 @@ export default function Home() {
     setPopupData({
       mass: {
         label: 'Mass',
-        value: data.pendulumMass,
+        value: data.tamperMass,
         unit: 'kg',
         icon: <Mountain className="w-5 h-5" />,
         color: '#3b82f6'
@@ -223,16 +324,29 @@ export default function Home() {
         icon: <Activity className="w-5 h-5" />,
         color: '#ef4444'
       },
+      dragCoefficient: {
+        label: 'Drag Coefficient (Cd)',
+        value: data.dragCoefficient,
+        icon: <Activity className="w-5 h-5" />,
+        color: '#3b82f6'
+      },
+      dragForce: {
+        label: 'Current Drag Force',
+        value: data.dragForce.toFixed(2),
+        unit: 'N',
+        icon: <Activity className="w-5 h-5" />,
+        color: '#ef4444'
+      },
       currentHeight: {
         label: 'Current Height',
-        value: data.pendulumHeight,
+        value: data.tamperHeight,
         unit: 'm',
         icon: <TrendingUp className="w-5 h-5" />,
         color: '#22c55e'
       },
       velocity: {
         label: 'Velocity',
-        value: data.pendulumVelocity,
+        value: data.tamperVelocity,
         unit: 'm/s',
         icon: <Activity className="w-5 h-5" />,
         color: '#f59e0b'
@@ -250,14 +364,37 @@ export default function Home() {
   
   const handleSoilClick = () => {
     setPopupTitle('Soil Details');
-    const batteryCurrentLabel = data.state === 'DISCHARGING' ? 'Recovery Current' : data.state === 'CHARGING' ? 'Charging Current' : 'Battery Current';
+    
+    const soilName = (() => {
+      switch (data.soilType) {
+        case 'sand': return 'Sand';
+        case 'clay': return 'Clay';
+        case 'gravel': return 'Gravel';
+        case 'loam': return 'Loam';
+        default: return 'Sand';
+      }
+    })();
+
     setPopupData({
+      soilType: {
+        label: 'Soil Type',
+        value: soilName,
+        icon: <Droplet className="w-5 h-5" />,
+        color: '#f59e0b'
+      },
       density: {
         label: 'Soil Density',
         value: data.soilDensity,
         unit: 'kg/m³',
         icon: <Droplet className="w-5 h-5" />,
         color: '#8b5cf6'
+      },
+      stiffness: {
+        label: 'Soil Stiffness',
+        value: (data.stiffness / 1e6).toFixed(3),
+        unit: 'MN/m',
+        icon: <Activity className="w-5 h-5" />,
+        color: '#f59e0b'
       },
       compaction: {
         label: 'Compaction',
@@ -272,19 +409,12 @@ export default function Home() {
         icon: <Activity className="w-5 h-5" />,
         color: '#ef4444'
       },
-      batteryCapacity: {
-        label: 'Battery Capacity',
-        value: data.batteryCapacity,
-        unit: '%',
-        icon: <Battery className="w-5 h-5" />,
-        color: '#22c55e'
-      },
-      batteryCurrent: {
-        label: batteryCurrentLabel,
-        value: data.batteryCurrent,
-        unit: 'A',
-        icon: <Battery className="w-5 h-5" />,
-        color: '#3b82f6'
+      craterDepth: {
+        label: 'Crater Depth',
+        value: (data.craterDepth * 100).toFixed(1),
+        unit: 'cm',
+        icon: <Mountain className="w-5 h-5" />,
+        color: '#ef4444'
       },
       initialDensity: {
         label: 'Initial Density',
@@ -292,13 +422,6 @@ export default function Home() {
         unit: 'kg/m³',
         icon: <Droplet className="w-5 h-5" />,
         color: '#6b7280'
-      },
-      maxDensity: {
-        label: 'Target Density',
-        value: 2000,
-        unit: 'kg/m³',
-        icon: <Mountain className="w-5 h-5" />,
-        color: '#22c55e'
       }
     });
     setPopupOpen(true);
@@ -309,7 +432,7 @@ export default function Home() {
     setPopupData({
       currentHeight: {
         label: 'Current Height',
-        value: data.pendulumHeight,
+        value: data.tamperHeight,
         unit: 'm',
         icon: <TrendingUp className="w-5 h-5" />,
         color: '#3b82f6'
@@ -323,7 +446,7 @@ export default function Home() {
       },
       heightPercentage: {
         label: 'Height Percentage',
-        value: (data.pendulumHeight / config.maxHeight) * 100,
+        value: (data.tamperHeight / config.maxHeight) * 100,
         unit: '%',
         icon: <Gauge className="w-5 h-5" />,
         color: '#f59e0b'
@@ -347,62 +470,48 @@ export default function Home() {
   };
   
   const handleStateClick = () => {
-    setPopupTitle('System State');
+    setPopupTitle('Impact Mechanics');
     setPopupData({
-      currentState: {
-        label: 'Current State',
-        value: data.state,
+      peakImpactForce: {
+        label: 'Peak Impact Force',
+        value: (data.impactForce / 1000).toFixed(1),
+        unit: 'kN',
         icon: <Activity className="w-5 h-5" />,
-        color: data.state === 'CHARGING' ? '#22c55e' : data.state === 'DISCHARGING' ? '#3b82f6' : data.state === 'IMPACT' ? '#ef4444' : '#6b7280'
+        color: '#f43f5e'
       },
-      simulationTime: {
-        label: 'Simulation Time',
-        value: data.time,
-        unit: 's',
-        icon: <Clock className="w-5 h-5" />,
+      craterDepth: {
+        label: 'Crater Depth',
+        value: (data.craterDepth * 100).toFixed(1),
+        unit: 'cm',
+        icon: <Mountain className="w-5 h-5" />,
+        color: '#f59e0b'
+      },
+      contactPressure: {
+        label: 'Contact Pressure',
+        value: (data.contactPressure / 1000).toFixed(1),
+        unit: 'kPa',
+        icon: <Gauge className="w-5 h-5" />,
         color: '#3b82f6'
       },
-      motorPower: {
-        label: 'Motor Power',
-        value: data.motorPower,
-        unit: 'W',
-        icon: <Zap className="w-5 h-5" />,
-        color: '#f59e0b'
+      soilStiffness: {
+        label: 'Soil Stiffness',
+        value: (data.stiffness / 1000).toFixed(0),
+        unit: 'kN/m',
+        icon: <Layers className="w-5 h-5" />,
+        color: '#8b5cf6'
       },
-      generatorPower: {
-        label: 'Generator Power',
-        value: data.generatorPower,
-        unit: 'W',
-        icon: <Zap className="w-5 h-5" />,
-        color: '#22c55e'
-      },
-      loadPower: {
-        label: 'Load Power',
-        value: data.loadPower,
-        unit: 'W',
-        icon: <Activity className="w-5 h-5" />,
-        color: '#ef4444'
-      },
-      solarPower: {
-        label: 'Solar Power',
-        value: data.solarPower,
-        unit: 'W',
-        icon: <Zap className="w-5 h-5" />,
-        color: '#f59e0b'
-      },
-      batteryCapacity: {
-        label: 'Battery Capacity',
-        value: data.batteryCapacity,
-        unit: '%',
-        icon: <Battery className="w-5 h-5" />,
-        color: '#22c55e'
-      },
-      totalEnergy: {
-        label: 'Total Energy',
-        value: data.totalEnergy / 1000,
+      kineticEnergy: {
+        label: 'Kinetic Energy at Impact',
+        value: (data.kineticEnergy / 1000).toFixed(1),
         unit: 'kJ',
         icon: <Zap className="w-5 h-5" />,
-        color: '#8b5cf6'
+        color: '#ef4444'
+      },
+      totalImpacts: {
+        label: 'Total Impacts',
+        value: data.impactCount,
+        icon: <Clock className="w-5 h-5" />,
+        color: '#10b981'
       }
     });
     setPopupOpen(true);
@@ -410,7 +519,24 @@ export default function Home() {
   
   const handleCompactionClick = () => {
     setPopupTitle('Compaction Details');
+    
+    const soilName = (() => {
+      switch (data.soilType) {
+        case 'sand': return 'Sand';
+        case 'clay': return 'Clay';
+        case 'gravel': return 'Gravel';
+        case 'loam': return 'Loam';
+        default: return 'Sand';
+      }
+    })();
+
     setPopupData({
+      soilType: {
+        label: 'Soil Type',
+        value: soilName,
+        icon: <Droplet className="w-5 h-5" />,
+        color: '#f59e0b'
+      },
       currentCompaction: {
         label: 'Current Compaction',
         value: data.soilCompaction,
@@ -449,8 +575,6 @@ export default function Home() {
     setPopupOpen(true);
   };
 
-  const hardwareConnected = hardwareMode && hardwareClient.getConnectionStatus();
-
   const statistics = dataLogger.getStatistics();
   
   return (
@@ -460,23 +584,12 @@ export default function Home() {
       
       {/* Configuration Panel */}
       <ConfigurationPanel
+        key={JSON.stringify(config)}
         config={config}
         onConfigChange={handleConfigChange}
-        onReset={() => {
-          setConfig({
-            pendulumMass: 500,
-            maxHeight: 15,
-            gravity: 9.81,
-            motorPower: 650,
-            solarPower: 750,
-            batteryVoltage: 24,
-            batteryCapacity: 50,
-            motorEfficiency: 0.85,
-            generatorEfficiency: 0.90,
-            initialSoilDensity: 1600
-          });
-          addAlert('Configuration reset to default', 'info');
-        }}
+        onReset={handleResetConfiguration}
+        isSaving={isConfigSaving}
+        saveState={configSaveState}
         isOpen={configOpen}
         onToggle={() => setConfigOpen(!configOpen)}
       />
@@ -494,39 +607,6 @@ export default function Home() {
         
         {/* Header Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Hardware Mode Toggle */}
-          <button
-            onClick={() => {
-              setHardwareMode(!hardwareMode);
-              addAlert(hardwareMode ? 'Switched to Simulation Mode' : 'Switched to Hardware Mode', 'info');
-            }}
-            className={`flex items-center gap-2 px-4.5 py-2.5 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider ${
-              hardwareMode 
-                ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-400 border-emerald-500/30 shadow-emerald-500/10' 
-                : 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 hover:from-slate-700/80 hover:to-slate-850/80 text-slate-300 border-slate-700/60 shadow-slate-900/20'
-            }`}
-            type="button"
-          >
-            {hardwareMode ? <Server className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
-            {hardwareMode ? 'Hardware' : 'Simulation'}
-          </button>
-          
-          {/* Connection Status Indicator */}
-          {hardwareMode && (
-            <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl border ${
-              hardwareConnected 
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                hardwareConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
-              }`} style={{ boxShadow: hardwareConnected ? '0 0 6px #10b981' : 'none' }} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                {hardwareConnected ? 'Connected' : 'Offline'}
-              </span>
-            </div>
-          )}
-          
           {/* Export Buttons */}
           <button
             onClick={handleExportCSV}
@@ -590,12 +670,12 @@ export default function Home() {
             
             <div className="h-auto">
               <PitVisualization
-                height={data.pendulumHeight}
+                height={data.tamperHeight}
                 state={data.state}
                 soilCompaction={data.soilCompaction}
                 soilDensity={data.soilDensity}
                 impactCount={data.impactCount}
-                pendulumVelocity={data.pendulumVelocity}
+                tamperVelocity={data.tamperVelocity}
                 solarPower={data.solarPower}
                 motorPower={data.motorPower}
                 generatorPower={data.generatorPower}
@@ -607,8 +687,11 @@ export default function Home() {
                 kineticEnergy={data.kineticEnergy}
                 totalEnergy={data.totalEnergy}
                 viewMode={visualizationMode}
-                pendulumMass={data.pendulumMass}
-                onPendulumClick={handlePendulumClick}
+                tamperMass={data.tamperMass}
+                impactForce={data.impactForce}
+                craterDepth={data.craterDepth}
+                contactPressure={data.contactPressure}
+                onTamperClick={handleTamperClick}
                 onSoilClick={handleSoilClick}
                 onHeightClick={handleHeightClick}
                 onStateClick={handleStateClick}
@@ -624,6 +707,9 @@ export default function Home() {
             onReset={handleReset}
             isRunning={isRunning}
             onToggleRunning={handleToggleRunning}
+            scenarios={scenarios}
+            onSelectScenario={handleSelectScenario}
+            activeScenarioId={activeScenarioId}
           />
           
           {/* Report Generator */}
@@ -686,9 +772,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <BatteryBar
               capacity={data.batteryCapacity}
-              voltage={data.batteryVoltage}
+              voltage={data.voltageTerminal ?? data.batteryVoltage ?? 24.0} 
               current={data.batteryCurrent}
-              state={data.state}
             />
             <EnergyMetrics
               potentialEnergy={data.potentialEnergy}
@@ -702,6 +787,7 @@ export default function Home() {
               electricityRateTHBPerKWh={statistics.electricityRateTHBPerKWh}
             />
           </div>
+
           
           {/* Charts Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -723,7 +809,7 @@ export default function Home() {
             />
             <RealTimeChart
               data={heightHistory}
-              title="Pendulum Height"
+              title="Tamper Height"
               color="#3b82f6"
               unit="m"
               maxDataPoints={50}
@@ -741,11 +827,11 @@ export default function Home() {
               </div>
               <div>
                 <div className="text-slate-500 font-bold">Velocity</div>
-                <div className="text-lg font-black text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{data.pendulumVelocity.toFixed(2)} m/s</div>
+                <div className="text-lg font-black text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{data.tamperVelocity.toFixed(2)} m/s</div>
               </div>
               <div>
-                <div className="text-slate-500 font-bold">Mass</div>
-                <div className="text-lg font-black text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{data.pendulumMass} kg</div>
+                <div className="text-slate-500 font-bold">Battery Temp</div>
+                <div className="text-lg font-black text-purple-400 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{(data.batteryTemp ?? 25.0).toFixed(1)} °C</div>
               </div>
               <div>
                 <div className="text-slate-500 font-bold">Status</div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Zap, Activity, Gauge, Droplet, Mountain, Clock, TrendingUp } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface DetailedInfoPopupProps {
   isOpen: boolean;
