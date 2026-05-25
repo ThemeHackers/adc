@@ -100,9 +100,9 @@ $$F_{lift} = m \cdot g$$
 
 #### 3.2 Motor Power Ramping ($P_{motor}$)
 To prevent numerical instability, motor power is ramped over time:
-$$P_{\text{motor\_next}} = \min\left(P_{\text{motor\_limit}},\ P_{\text{motor\_current}} + \text{MOTOR\_RAMP\_RATE} \cdot dt_{sub}\right)$$
-*   $P_{\text{motor\_limit}}$: User-configured motor power limit ($\text{W}$)
-*   $\text{MOTOR\_RAMP\_RATE}$: Power ramp rate $= 180\text{ W/s}$
+$$P_{\text{motor\\_next}} = \min\left(P_{\text{motor\\_limit}},\ P_{\text{motor\\_current}} + \text{MOTOR\\_RAMP\\_RATE} \cdot dt_{sub}\right)$$
+*   $P_{\text{motor\\_limit}}$: User-configured motor power limit ($\text{W}$)
+*   $\text{MOTOR\\_RAMP\\_RATE}$: Power ramp rate $= 180\text{ W/s}$
 *   $dt_{sub}$: Sub-stepping time interval ($\text{s}$)
 
 #### 3.3 Lift Velocity ($v_{lift}$)
@@ -133,10 +133,10 @@ $$E_g = K_e \cdot G \cdot |v|$$
 
 #### 4.2 Charging Current ($I_a$)
 Current flows into the battery only when the Back EMF exceeds the battery terminal voltage:
-$$I_a = \max\left(0,\ \frac{E_g - V_{\text{batt}}}{R_{\text{load}} + R_{\text{gen\_int}}}\right)$$
+$$I_a = \max\left(0,\ \frac{E_g - V_{\text{batt}}}{R_{\text{load}} + R_{\text{gen\\_int}}}\right)$$
 *   $I_a$: Armature current charging the battery ($\text{A}$)
 *   $R_{\text{load}}$: Load resistance ($\Omega$)
-*   $R_{\text{gen\_int}}$: Generator internal resistance $= 0.4\ \Omega$ (constant `GENERATOR_INTERNAL_RESISTANCE`)
+*   $R_{\text{gen\\_int}}$: Generator internal resistance $= 0.4\ \Omega$ (constant `GENERATOR_INTERNAL_RESISTANCE`)
 
 #### 4.3 Electromagnetic Braking Force ($F_{\text{brake}}$)
 $$F_{\text{brake}} = K_t \cdot G \cdot I_a \cdot \text{sign}(v)$$
@@ -147,16 +147,16 @@ Mechanical friction scales with mass and velocity to represent cable tension:
 $$F_{friction} = \max\left(1,\ (40 + 15 \cdot |v|) \cdot \frac{m}{500}\right)$$
 
 #### 4.5 Power Calculations
-*   Generated Power ($P_{\text{gen\_real}}$):
-    $$P_{\text{gen\_real}} = F_{brake} \cdot |v| \cdot \eta_{gen}$$
+*   Generated Power ($P_{\text{gen\\_real}}$):
+    $$P_{\text{gen\\_real}} = F_{brake} \cdot |v| \cdot \eta_{gen}$$
 *   Load Power ($P_{load}$):
     $$P_{load} = I_a^2 \cdot R_{load}$$
     *   $\eta_{gen}$: Generator efficiency $= 0.9$ (constant `GENERATOR_EFFICIENCY`)
 
 #### 4.6 Equation of Motion
 The net upward force and acceleration during descent:
-$$F_{\text{net\_upward}} = -m \cdot g + F_{brake} + |F_{drag}| + F_{friction}$$
-$$a = \frac{F_{\text{net\_upward}}}{m}$$
+$$F_{\text{net\\_upward}} = -m \cdot g + F_{brake} + |F_{drag}| + F_{friction}$$
+$$a = \frac{F_{\text{net\\_upward}}}{m}$$
 *   $v_{next} = v + a \cdot dt_{sub}$ (clamped to $\le 0$ as the tamper is falling)
 
 ---
@@ -191,7 +191,7 @@ $$\text{Plastic deformation occurs when: } P_{contact} > q_u$$
 #### 5.7 Compaction Increase ($\Delta C_{soil}$)
 If the bearing capacity is exceeded, compaction increases, with a single-impact limit of $15\%$:
 $$\Delta C_{soil} = \min\left(15,\ \left(\frac{P_{contact}}{q_u} - 1.0\right) \cdot 1.5 \cdot \left(1.0 - \frac{C_{soil}}{100}\right) + 0.5\right)$$
-*   Updated Compaction: $C_{\text{soil\_next}} = \min(100,\ C_{soil} + \Delta C_{soil})$
+*   Updated Compaction: $C_{\text{soil\\_next}} = \min(100,\ C_{soil} + \Delta C_{soil})$
 
 #### 5.8 Physical Soil Density ($\rho_{soil}$)
 $$\rho_{soil} = \rho_{initial} + \frac{C_{soil}}{100} \cdot (\rho_{max} - \rho_{initial})$$
@@ -208,12 +208,12 @@ OCV varies linearly with the State of Charge ($SoC$):
 *   **48V System:**
     $$V_{oc} = 44.0 + \frac{SoC}{100} \cdot 12.0$$
 
-#### 6.2 Battery Internal Resistance ($R_{\text{batt\_int}}$)
-*   24V System: $R_{\text{batt\_int}} = 0.04\ \Omega$
-*   48V System: $R_{\text{batt\_int}} = 0.08\ \Omega$
+#### 6.2 Battery Internal Resistance ($R_{\text{batt\\_int}}$)
+*   24V System: $R_{\text{batt\\_int}} = 0.04\ \Omega$
+*   48V System: $R_{\text{batt\\_int}} = 0.08\ \Omega$
 
 #### 6.3 Terminal Voltage ($V_{terminal}$)
-$$V_{terminal} = \max\left(0,\ V_{oc} + I_{batt} \cdot R_{\text{batt\_int}}\right)$$
+$$V_{terminal} = \max\left(0,\ V_{oc} + I_{batt} \cdot R_{\text{batt\\_int}}\right)$$
 *   $I_{batt}$: Net current (positive for charging, negative for discharging)
 
 #### 6.4 Capacity Delta ($\Delta Capacity\%$)
@@ -222,7 +222,7 @@ $$\Delta Capacity\% = \frac{I_{batt} \cdot dt_{sub}}{\text{Capacity}_{Ah}} \cdot
 
 #### 6.5 Thermal Loss and Temperature ($T_{batt}$)
 *   Internal Joule heating power ($P_{heat}$):
-    $$P_{heat} = I_{batt}^2 \cdot R_{\text{batt\_int}}$$
+    $$P_{heat} = I_{batt}^2 \cdot R_{\text{batt\\_int}}$$
 *   Convective cooling power ($P_{cool}$):
     $$P_{cool} = h_{cool} \cdot (T_{batt} - T_{amb})$$
     *   $h_{cool}$: Cooling coefficient $= 1.5\text{ W/K}$ (constant `BATTERY_COOLING_COEFF`)
@@ -231,7 +231,7 @@ $$\Delta Capacity\% = \frac{I_{batt} \cdot dt_{sub}}{\text{Capacity}_{Ah}} \cdot
     $$\frac{dT_{batt}}{dt} = \frac{P_{heat} - P_{cool}}{C_{thermal}}$$
     *   $C_{thermal}$: Battery thermal mass $= 1,200\text{ J/K}$ (constant `BATTERY_THERMAL_MASS`)
 *   Updated Temperature:
-    $$T_{\text{batt\_next}} = \max\left(25.0,\ T_{batt} + \frac{dT_{batt}}{dt} \cdot dt_{sub}\right)$$
+    $$T_{\text{batt\\_next}} = \max\left(25.0,\ T_{batt} + \frac{dT_{batt}}{dt} \cdot dt_{sub}\right)$$
 
 ---
 
