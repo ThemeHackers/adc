@@ -5,6 +5,9 @@ import { DEFAULT_SIMULATION_CONFIG, sanitizeSimulationConfig, SimulationConfig }
 
 const CONFIG_FILE_PATH = path.join(process.cwd(), 'simulation-config.json');
 
+
+let inMemoryConfig: SimulationConfig | null = null;
+
 const writeConfigToDisk = async (config: SimulationConfig): Promise<void> => {
   await fs.writeFile(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8');
 };
@@ -14,10 +17,21 @@ const readConfigFromDisk = async (): Promise<SimulationConfig> => {
     const raw = await fs.readFile(CONFIG_FILE_PATH, 'utf-8');
     const parsed = JSON.parse(raw);
     const config = sanitizeSimulationConfig(parsed);
-    await writeConfigToDisk(config);
+    try {
+      await writeConfigToDisk(config);
+    } catch {
+     
+    }
     return config;
   } catch {
-    await writeConfigToDisk(DEFAULT_SIMULATION_CONFIG);
+    if (inMemoryConfig) {
+      return inMemoryConfig;
+    }
+    try {
+      await writeConfigToDisk(DEFAULT_SIMULATION_CONFIG);
+    } catch {
+    
+    }
     return DEFAULT_SIMULATION_CONFIG;
   }
 };
@@ -36,10 +50,20 @@ export async function POST(request: Request) {
         : body;
 
     const config = sanitizeSimulationConfig(payload);
-    await writeConfigToDisk(config);
+    
+   
+    inMemoryConfig = config;
+
+    
+    try {
+      await writeConfigToDisk(config);
+    } catch (err) {
+      console.warn('Unable to write configuration to disk (expected on Vercel/read-only filesystems):', err);
+    }
 
     return NextResponse.json({ config });
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse or process config payload:', err);
     return NextResponse.json(
       { error: 'Invalid configuration payload' },
       { status: 400 }

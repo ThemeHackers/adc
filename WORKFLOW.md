@@ -103,7 +103,7 @@ sequenceDiagram
 1.  **Gravity Release:** Tamper falls under gravity, generating velocity $v$.
 2.  **Back EMF Generation:** The spinning pulley generates EMF ($E_g = 0.15 \cdot G \cdot |v|$).
 3.  **Rectification Block:** Current flows only if Back EMF exceeds the battery voltage:
-    $$I_a = \max\left(0, \frac{E_g - V_{batt}}{R_{load} + R_{gen\_int}}\right)$$
+    $$I_a = \max\left(0, \frac{E_g - V_{batt}}{R_{load} + R_{\text{gen\_int}}}\right)$$
 4.  **Braking Torque Feedback:** The armature current induces electromagnetic braking:
     $$F_{brake} = 0.15 \cdot G \cdot I_a$$
 5.  **Euler Numerical Integration:** Accurately solves the equation of motion:
@@ -131,14 +131,14 @@ sequenceDiagram
 ### 3.4 Battery & Thermal Sub-System
 1.  **State of Charge (SoC):** Integrates current $I_{batt}$ over time to update battery capacity.
 2.  **Terminal Voltage Drop:**
-    $$V_{terminal} = V_{oc} + I_{batt} \cdot R_{batt\_int}$$
+    $$V_{terminal} = V_{oc} + I_{batt} \cdot R_{\text{batt\_int}}$$
 3.  **Joule Heating Calculation:**
-    $$P_{heat} = I_{batt}^2 \cdot R_{batt\_int}$$
+    $$P_{heat} = I_{batt}^2 \cdot R_{\text{batt\_int}}$$
 4.  **Convective Cooling Dissipation:**
     $$P_{cool} = 1.5\text{ W/K} \cdot (T_{batt} - 25^\circ\text{C})$$
 5.  **Thermal Solver:**
     $$\frac{dT_{batt}}{dt} = \frac{P_{heat} - P_{cool}}{1200\text{ J/K}}$$
-    $$T_{batt\_next} = T_{batt} + \frac{dT_{batt}}{dt} \cdot dt_{sub}$$
+    $$T_{\text{batt\_next}} = T_{batt} + \frac{dT_{batt}}{dt} \cdot dt_{sub}$$
 6.  **Safety Alert:** Triggers warning if $T_{batt} > 45^\circ\text{C}$.
 
 ---
