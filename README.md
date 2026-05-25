@@ -286,4 +286,4 @@ The database includes specific parameters for 4 distinct soil types:
 
 ## 4. System Operational Workflows
 
-For detailed visual diagrams of state transitions, sub-stepping loop sequences, and sub-system workflow architectures, refer to the [Operational Workflow](../workflow.md) document.
+For detailed visual diagrams of state transitions, sub-stepping loop sequences, and sub-system workflow architectures, refer to the [Operational Workflow](workflow.md) document.
