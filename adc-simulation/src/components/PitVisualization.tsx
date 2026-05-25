@@ -59,6 +59,7 @@ export default function PitVisualization({
   const heightRatio = clampedHeight / maxHeight;
   const compactedRatio = Math.max(0, Math.min(soilCompaction, 100)) / 100;
   const batteryRatio = Math.max(0, Math.min(batteryCapacity, 100)) / 100;
+  const batteryFlowLabel = state === 'CHARGING' ? 'Charging Current' : state === 'DISCHARGING' ? 'Recovery Current' : 'System Current';
   const sceneWidth = 1000;
   const sceneHeight = 580;
   const bobX = is3d ? 520 : 500;
@@ -446,12 +447,14 @@ export default function PitVisualization({
 
         <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3">
-            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">Battery Charge</div>
+            <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500 font-bold">{batteryFlowLabel}</div>
             <div className="mt-2 text-2xl font-black text-slate-100 leading-none" style={{ fontFamily: 'var(--font-mono), monospace' }}>{batteryCapacity.toFixed(1)}<span className="ml-0.5 text-xs font-semibold text-slate-400">%</span></div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-900 p-0.5">
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-300" style={{ width: `${batteryRatio * 100}%` }} />
             </div>
-            <div className="mt-2 text-[10px] text-slate-400 font-mono">{batteryVoltage.toFixed(0)}V · {batteryCurrent.toFixed(1)}A</div>
+            <div className="mt-2 text-[10px] text-slate-400 font-mono">
+              {batteryVoltage.toFixed(0)}V · {state === 'DISCHARGING' ? '↺' : batteryCurrent > 0 ? '+' : ''}{Math.abs(batteryCurrent).toFixed(1)}A
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-3">

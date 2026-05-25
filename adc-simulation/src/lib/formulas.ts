@@ -1,5 +1,5 @@
 export const IMPACT_ENERGY_FACTOR = 0.5;
-export const SOIL_COMPACTION_FACTOR = 0.0002;
+export const SOIL_COMPACTION_FACTOR = 0.00002;
 export const INITIAL_SOIL_DENSITY = 1600;
 export const MAX_SOIL_DENSITY = 2000;
 export const GENERATOR_EFFICIENCY = 0.9;
@@ -40,7 +40,7 @@ export function calculateBatteryCapacityDelta(
   dtSeconds: number,
   capacityAh: number = BATTERY_REFERENCE_CAPACITY_AH,
 ): number {
-  return (batteryCurrentA * dtSeconds / capacityAh) * 100;
+  return (batteryCurrentA * (dtSeconds / 3600) / capacityAh) * 100;
 }
 
 export function normalizeRawValue(rawValue: number, minRaw: number, maxRaw: number): number {

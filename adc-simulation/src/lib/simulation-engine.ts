@@ -43,6 +43,7 @@ export interface SimulationData {
 export class SimulationEngine {
   private data: SimulationData;
   private lastUpdateTime: number;
+  private pendingImpactVelocityReset: boolean;
   
   private readonly GRAVITY = 9.81;
   private readonly MOTOR_EFFICIENCY = 0.85;
@@ -55,6 +56,7 @@ export class SimulationEngine {
   constructor() {
     this.data = this.getInitialState();
     this.lastUpdateTime = Date.now();
+    this.pendingImpactVelocityReset = false;
   }
   
   private getInitialState(): SimulationData {
@@ -91,6 +93,11 @@ export class SimulationEngine {
   public update(deltaTime: number): void {
     const dt = deltaTime / 1000;
     this.data.time += dt;
+
+    if (this.pendingImpactVelocityReset) {
+      this.data.pendulumVelocity = 0;
+      this.pendingImpactVelocityReset = false;
+    }
     
     switch (this.data.state) {
       case 'IDLE':
@@ -125,7 +132,7 @@ export class SimulationEngine {
     this.data.motorPower = Math.min(650, solarInput * this.MOTOR_EFFICIENCY);
     
     const liftingForce = this.data.pendulumMass * this.GRAVITY;
-    const upwardVelocity = liftingForce > 0 ? this.data.motorPower / liftingForce : 0;
+    const upwardVelocity = liftingForce > 0 ? (this.data.motorPower * this.MOTOR_EFFICIENCY) / liftingForce : 0;
     
     if (this.data.pendulumHeight < this.MAX_HEIGHT) {
       this.data.pendulumHeight += upwardVelocity * dt;
@@ -138,9 +145,15 @@ export class SimulationEngine {
     
     const batteryVoltage = this.data.batteryVoltage > 0 ? this.data.batteryVoltage : BATTERY_SYSTEM_VOLTAGE;
     const chargeRate = (solarInput - this.data.motorPower) / batteryVoltage;
-    this.data.batteryCurrent = chargeRate;
-    const chargePercentage = calculateBatteryCapacityDelta(chargeRate, dt, BATTERY_REFERENCE_CAPACITY_AH);
-    this.data.batteryCapacity = Math.min(100, Math.max(0, this.data.batteryCapacity + chargePercentage));
+    const nextBatteryCapacity = this.data.batteryCapacity + calculateBatteryCapacityDelta(chargeRate, dt, BATTERY_REFERENCE_CAPACITY_AH);
+
+    if (this.data.batteryCapacity >= 100 || nextBatteryCapacity >= 100) {
+      this.data.batteryCapacity = 100;
+      this.data.batteryCurrent = 0;
+    } else {
+      this.data.batteryCurrent = chargeRate;
+      this.data.batteryCapacity = Math.min(100, Math.max(0, nextBatteryCapacity));
+    }
   }
   
   private updateDischarging(dt: number): void {
@@ -161,9 +174,9 @@ export class SimulationEngine {
       
       const batteryVoltage = this.data.batteryVoltage > 0 ? this.data.batteryVoltage : BATTERY_SYSTEM_VOLTAGE;
       const dischargeRate = this.data.loadPower / batteryVoltage;
-      this.data.batteryCurrent = -dischargeRate;
+      this.data.batteryCurrent = dischargeRate;
       const dischargePercentage = calculateBatteryCapacityDelta(dischargeRate, dt, BATTERY_REFERENCE_CAPACITY_AH);
-      this.data.batteryCapacity = Math.max(0, this.data.batteryCapacity - dischargePercentage);
+      this.data.batteryCapacity = Math.min(100, Math.max(0, this.data.batteryCapacity + dischargePercentage));
     } else {
       this.data.pendulumVelocity = 0;
       this.data.generatorPower = 0;
@@ -198,8 +211,7 @@ export class SimulationEngine {
         this.data.soilCompaction = Math.min(100, Math.max(0, this.data.soilCompaction + compactionIncrease));
         
         this.data.soilDensity = calculateSoilDensity(this.data.soilCompaction);
-        
-        this.data.pendulumVelocity = 0;
+        this.pendingImpactVelocityReset = true;
       }
     }
   }
@@ -219,5 +231,6 @@ export class SimulationEngine {
   public reset(): void {
     this.data = this.getInitialState();
     this.lastUpdateTime = Date.now();
+    this.pendingImpactVelocityReset = false;
   }
 }

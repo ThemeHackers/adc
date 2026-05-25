@@ -6,14 +6,16 @@ import { Zap, Sun, Battery, Cpu } from 'lucide-react';
 interface PowerGaugeProps {
   title: string;
   value: number;
+  min?: number;
   max: number;
   unit: string;
   icon: 'sun' | 'battery' | 'cpu' | 'zap';
   color: string;
 }
 
-export default function PowerGauge({ title, value, max, unit, icon, color }: PowerGaugeProps) {
-  const percentage = Math.min((value / max) * 100, 100);
+export default function PowerGauge({ title, value, min = 0, max, unit, icon, color }: PowerGaugeProps) {
+  const range = max - min;
+  const percentage = range > 0 ? Math.max(0, Math.min(((value - min) / range) * 100, 100)) : 0;
   
   const getIcon = () => {
     switch (icon) {
@@ -111,7 +113,7 @@ export default function PowerGauge({ title, value, max, unit, icon, color }: Pow
       </div>
       
       <div className="mt-1 flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-        <span>0</span>
+        <span>{min}</span>
         <span>{max}</span>
       </div>
     </div>

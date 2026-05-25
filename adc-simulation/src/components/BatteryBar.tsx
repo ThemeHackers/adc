@@ -7,9 +7,10 @@ interface BatteryBarProps {
   capacity: number;
   voltage: number;
   current: number;
+  state?: string;
 }
 
-export default function BatteryBar({ capacity, voltage, current }: BatteryBarProps) {
+export default function BatteryBar({ capacity, voltage, current, state }: BatteryBarProps) {
   const getBatteryIcon = () => {
     if (capacity > 75) return <BatteryFull className="w-8 h-8" />;
     if (capacity > 50) return <BatteryMedium className="w-8 h-8" />;
@@ -25,7 +26,9 @@ export default function BatteryBar({ capacity, voltage, current }: BatteryBarPro
   };
   
   const colors = getBatteryColor();
-  const isCharging = current > 0;
+  const isCharging = state ? state === 'CHARGING' : current > 0;
+  const flowLabel = state === 'DISCHARGING' ? 'Energy Recovery' : isCharging ? 'Charging Mode' : 'Standby Mode';
+  const currentSign = current > 0 ? '+' : current < 0 ? '-' : '';
   
   return (
     <div className="cyber-glass rounded-2xl p-5 shadow-2xl transition-all duration-300 hover:border-slate-700/80">
@@ -73,15 +76,15 @@ export default function BatteryBar({ capacity, voltage, current }: BatteryBarPro
       <div className="flex items-center justify-between text-xs bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
         <div className="flex items-center gap-2">
           <div 
-            className={`w-2.5 h-2.5 rounded-full ${isCharging ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} 
-            style={{ boxShadow: `0 0 6px ${isCharging ? '#10b981' : '#f43f5e'}` }}
+            className={`w-2.5 h-2.5 rounded-full ${isCharging ? 'bg-emerald-500' : state === 'DISCHARGING' ? 'bg-blue-500' : 'bg-rose-500'} animate-pulse`} 
+            style={{ boxShadow: `0 0 6px ${isCharging ? '#10b981' : state === 'DISCHARGING' ? '#3b82f6' : '#f43f5e'}` }}
           />
           <span className="font-bold text-slate-300 uppercase tracking-wider">
-            {isCharging ? 'Charging Mode' : 'Discharging Mode'}
+            {flowLabel}
           </span>
         </div>
-        <div className={`font-mono font-bold text-sm ${isCharging ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {isCharging ? '+' : ''}{current.toFixed(2)} A
+        <div className={`font-mono font-bold text-sm ${isCharging ? 'text-emerald-400' : state === 'DISCHARGING' ? 'text-blue-400' : 'text-rose-400'}`}>
+          {currentSign}{Math.abs(current).toFixed(2)} A
         </div>
       </div>
     </div>

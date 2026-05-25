@@ -250,6 +250,7 @@ export default function Home() {
   
   const handleSoilClick = () => {
     setPopupTitle('Soil Details');
+    const batteryCurrentLabel = data.state === 'DISCHARGING' ? 'Recovery Current' : data.state === 'CHARGING' ? 'Charging Current' : 'Battery Current';
     setPopupData({
       density: {
         label: 'Soil Density',
@@ -279,7 +280,7 @@ export default function Home() {
         color: '#22c55e'
       },
       batteryCurrent: {
-        label: 'Battery Current',
+        label: batteryCurrentLabel,
         value: data.batteryCurrent,
         unit: 'A',
         icon: <Battery className="w-5 h-5" />,
@@ -687,6 +688,7 @@ export default function Home() {
               capacity={data.batteryCapacity}
               voltage={data.batteryVoltage}
               current={data.batteryCurrent}
+              state={data.state}
             />
             <EnergyMetrics
               potentialEnergy={data.potentialEnergy}
