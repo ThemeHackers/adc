@@ -38,6 +38,11 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
   const area = Math.PI * Math.pow(radius, 2);
   const props = SOIL_DATABASE[soilType] || SOIL_DATABASE.sand;
 
+  const rInt = batteryVoltage > 36 ? 0.08 : 0.04;
+  const frictionForce = Math.max(1, (40 + 15 * Math.abs(tamperVelocity)) * (tamperMass / 500));
+  const brakingForce = state === 'DISCHARGING' ? (0.15 * gearRatio * batteryCurrent) : 0;
+  const accelVal = -9.81 + (brakingForce + dragForce + frictionForce) / tamperMass;
+
   const currentSoilName = (() => {
     switch (soilType) {
       case 'sand': return 'Sand';
@@ -134,7 +139,7 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
                 F_peak = √(2 × E_k × k_s) , d_crater = F_peak / k_s
               </div>
               <div className="text-slate-400 text-xs">
-                F_peak = √(2 × {(kineticEnergy / 1000).toFixed(2)} kJ × {(stiffness / 1e6).toFixed(2)} MN/m) 
+                F_peak = √(2 × {(kineticEnergy / 1000).toFixed(2)} kJ × {(stiffness / 1e6).toFixed(2)} MN/m)
                 = <span className="text-amber-400 font-bold">{(impactForce / 1000).toFixed(1)} kN</span>
                 <br />
                 d_crater = {(craterDepth * 100).toFixed(1)} cm (depth)
@@ -147,10 +152,10 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
                 P_contact = F_peak / A_base vs q_u
               </div>
               <div className="text-slate-400 text-xs">
-                P_contact = {(impactForce / 1000).toFixed(1)} kN / {area.toFixed(4)} m² 
+                P_contact = {(impactForce / 1000).toFixed(1)} kN / {area.toFixed(4)} m²
                 = <span className="text-amber-400 font-bold">{(contactPressure / 1000).toFixed(1)} kPa</span>
                 <br />
-                q_u (Soil type limit: {currentSoilName}) 
+                q_u (Soil type limit: {currentSoilName})
                 = <span className="text-blue-400">{(props.ultimateBearingCapacity / 1000).toFixed(0)} kPa</span>
               </div>
             </div>
@@ -196,10 +201,10 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
             <div className="space-y-2 bg-slate-900/60 p-3 rounded-lg border border-slate-800/50">
               <div className="text-[11px] text-slate-500 font-bold">2. GENERATION CURRENT:</div>
               <div className="text-slate-200 font-bold">
-                I_a = max(0, (E_g - V_batt) / (R_load + R_int))
+                I_a = max(0, (E_g - V_batt) / (R_load + R_gen_int + R_batt_int))
               </div>
               <div className="text-slate-400 text-xs">
-                = ({generatorEMF.toFixed(2)}V - {batteryVoltage.toFixed(1)}V) / ({loadResistance.toFixed(1)}Ω + 0.4Ω)
+                = ({generatorEMF.toFixed(2)}V - {batteryVoltage.toFixed(1)}V) / ({loadResistance.toFixed(1)}Ω + 0.40Ω + {rInt.toFixed(2)}Ω)
                 = <span className="text-blue-400 font-bold">
                   {state === 'DISCHARGING' ? batteryCurrent.toFixed(2) : '0.00'} A
                 </span>
@@ -217,8 +222,8 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
               <div className="text-slate-400 text-xs">
                 = 0.15 × {gearRatio.toFixed(1)} × {(state === 'DISCHARGING' ? batteryCurrent : 0).toFixed(2)} A
                 = <span className="text-blue-400 font-bold">
-                  {(state === 'DISCHARGING' 
-                    ? (0.15 * gearRatio * batteryCurrent) 
+                  {(state === 'DISCHARGING'
+                    ? (0.15 * gearRatio * batteryCurrent)
                     : 0
                   ).toFixed(1)} N
                 </span>
@@ -227,10 +232,10 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
 
             {/* Differential Equation details */}
             <div className="bg-slate-950 px-3 py-2 rounded border border-slate-800 text-xs text-slate-400">
-              <div className="text-[10px] font-bold text-slate-500 uppercase">Equation of Motion:</div>
-              m·a = m·g - F_brake - F_drag - F_friction 
+              <div className="text-[10px] font-bold text-slate-500 uppercase">Equation of Motion (Descent):</div>
+              m·a = -m·g + F_brake + F_drag + F_friction
               <br />
-              Acceleration = {state === 'DISCHARGING' ? ((9.81 - (0.15 * gearRatio * batteryCurrent + dragForce + (40 + 15 * Math.abs(tamperVelocity))) / tamperMass)).toFixed(3) : '0.00'} m/s²
+              Acceleration = {state === 'DISCHARGING' || state === 'IMPACT' ? accelVal.toFixed(3) : '0.000'} m/s²
             </div>
           </div>
         )}
@@ -254,7 +259,7 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
               <div className="text-slate-400 text-xs">
                 Volume = {(tamperMass / 7850).toFixed(4)} m³ (mass {tamperMass} kg / steel 7850 kg/m³)
                 <br />
-                Radius = {radius.toFixed(3)} m , 
+                Radius = {radius.toFixed(3)} m ,
                 Base Area = <span className="text-cyan-400 font-bold">{area.toFixed(4)} m²</span>
               </div>
             </div>
@@ -302,7 +307,7 @@ export default function MathTelemetryPanel({ data }: MathTelemetryPanelProps) {
               <div className="text-slate-400 text-xs">
                 V_oc ({batteryCapacity.toFixed(1)}% SoC) = {(voltageTerminal - batteryCurrent * (batteryVoltage > 36 ? 0.08 : 0.04)).toFixed(2)} V
                 <br />
-                V_term = OCV + {batteryCurrent.toFixed(1)}A × {batteryVoltage > 36 ? 0.08 : 0.04}Ω 
+                V_term = OCV + {batteryCurrent.toFixed(1)}A × {batteryVoltage > 36 ? 0.08 : 0.04}Ω
                 = <span className="text-purple-400 font-bold">{voltageTerminal.toFixed(2)} V</span>
               </div>
             </div>

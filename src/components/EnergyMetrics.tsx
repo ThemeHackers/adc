@@ -88,7 +88,7 @@ export default function EnergyMetrics({
       format: (v: number) => `THB ${v.toFixed(2)}`
     }
   ];
-  
+
   return (
     <div className="space-y-3">
       {metrics.map((metric, index) => (
@@ -115,7 +115,7 @@ export default function EnergyMetrics({
           </div>
         </div>
       ))}
-      
+
       {/* Impact counter */}
       <div className="bg-gradient-to-r from-rose-600 to-red-600 rounded-xl p-4 shadow-xl transition-all duration-300 hover:shadow-[0_0_15px_rgba(244,63,94,0.4)]">
         <div className="flex items-center justify-between">
@@ -142,7 +142,7 @@ export default function EnergyMetrics({
           <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Thailand Electricity Bill Estimate</div>
           <div className="mt-1 text-2xl font-black text-emerald-400" style={{ fontFamily: 'var(--font-mono), monospace' }}>THB {estimatedConsumptionCostTHB.toFixed(2)}</div>
         </div>
-        
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-800/80 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
           <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 flex flex-col justify-between">
             <span className="text-slate-500 block mb-0.5">Value</span>

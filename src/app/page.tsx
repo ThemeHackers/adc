@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SimulationEngine, SimulationData, SimulationState } from '@/lib/simulation-engine';
-import { DataLogger, SimulationStatistics } from '@/lib/dataLogger';
+import { SimulationStatistics } from '@/lib/dataLogger';
 import { DEFAULT_SIMULATION_CONFIG, SimulationConfig } from '@/lib/simulationConfig';
-import { scenarios, ScenarioRunner, Scenario } from '@/lib/scenarios';
+import { scenarios, Scenario } from '@/lib/scenarios';
 import ConfigurationPanel from '@/components/ConfigurationPanel';
 import AlertSystem, { useAlertManager } from '@/components/AlertSystem';
 import PitVisualization from '@/components/PitVisualization';
@@ -16,8 +16,23 @@ import RealTimeChart from '@/components/RealTimeChart';
 import ReportGenerator from '@/components/ReportGenerator';
 import HistoricalComparison from '@/components/HistoricalComparison';
 import DetailedInfoPopup from '@/components/DetailedInfoPopup';
+import Link from 'next/link';
 import { Download, History, Zap, Activity, Gauge, Droplet, Mountain, Clock, TrendingUp, Battery, Layers, Flame } from 'lucide-react';
 import { calculateCylinderVolume, calculateCylinderRadius, calculateCylinderHeight, calculateCylinderBottomArea } from '@/lib/formulas';
+import {
+  sharedSimulation,
+  sharedDataLogger,
+  sharedScenarioRunner,
+  subscribeToSimulation,
+  subscribeToScenarioStateChange,
+  subscribeToScenarioComplete,
+  getSharedIsRunning,
+  setSharedIsRunning,
+  getSharedActiveScenarioId,
+  setSharedActiveScenarioId,
+  startSharedScenario,
+  resetSharedSimulation
+} from '@/lib/sharedState';
 
 type PopupItem = {
   label: string;
@@ -37,12 +52,10 @@ interface HistoricalRun {
 }
 
 export default function Home() {
-  const [simulation] = useState(() => new SimulationEngine());
-  const [dataLogger] = useState(() => new DataLogger());
   const { alerts, addAlert, dismissAlert, clearAllAlerts } = useAlertManager();
-  
-  const [data, setData] = useState<SimulationData>(simulation.getData());
-  const [isRunning, setIsRunning] = useState(false);
+
+  const [data, setData] = useState<SimulationData>(sharedSimulation.getData());
+  const [isRunning, setIsRunning] = useState(getSharedIsRunning());
   const [configOpen, setConfigOpen] = useState(false);
   const [visualizationMode, setVisualizationMode] = useState<'2d' | '3d'>('3d');
 
@@ -51,57 +64,75 @@ export default function Home() {
   const [configSaveState, setConfigSaveState] = useState<'idle' | 'saved' | 'error'>('idle');
   const [historicalData, setHistoricalData] = useState<HistoricalRun[]>([]);
   const [showHistorical, setShowHistorical] = useState(false);
-  
-  const [scenarioRunner] = useState(() => new ScenarioRunner());
-  const [activeScenarioId, setActiveScenarioId] = useState<string>('custom');
 
-  useEffect(() => {
-    return () => {
-      scenarioRunner.stop();
-    };
-  }, [scenarioRunner]);
-  
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(getSharedActiveScenarioId());
+
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupTitle, setPopupTitle] = useState('');
   const [popupData, setPopupData] = useState<PopupData>({});
-  
+
   const [energyHistory, setEnergyHistory] = useState<Array<{ time: number; value: number }>>([]);
   const [powerHistory, setPowerHistory] = useState<Array<{ time: number; value: number }>>([]);
   const [heightHistory, setHeightHistory] = useState<Array<{ time: number; value: number }>>([]);
-  
-  const updateSimulation = useCallback(() => {
-    simulation.update(50);
-    const newData = simulation.getData();
-    setData(newData);
-    dataLogger.log(newData);
-    
-    const time = newData.time;
-    setEnergyHistory(prev => [...prev.slice(-100), { time, value: newData.totalEnergy / 1000 }]);
-    setPowerHistory(prev => [...prev.slice(-100), { time, value: newData.generatorPower }]);
-    setHeightHistory(prev => [...prev.slice(-100), { time, value: newData.tamperHeight }]);
-    
-    if (newData.batteryCapacity < 20 && newData.batteryCapacity > 19) {
-      addAlert('Low Battery!', 'warning');
-    }
-    if ((newData.batteryTemp ?? 25.0) > 45 && (newData.batteryTemp ?? 25.0) < 45.5) {
-      addAlert('Battery Overheating! High temperature warning.', 'error');
-    }
-    if (newData.tamperHeight >= config.maxHeight * 0.99 && newData.tamperHeight < config.maxHeight) {
-      addAlert('Max Height Reached', 'info');
-    }
-  }, [simulation, dataLogger, config, addAlert]);
-  
+
+
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isRunning) {
-      interval = setInterval(updateSimulation, 50);
-    }
-    
+    const logs = sharedDataLogger.getLogs();
+    setEnergyHistory(logs.map(log => ({ time: log.time, value: log.totalEnergy / 1000 })));
+    setPowerHistory(logs.map(log => ({ time: log.time, value: log.generatorPower })));
+    setHeightHistory(logs.map(log => ({ time: log.time, value: log.tamperHeight })));
+  }, []);
+
+
+  useEffect(() => {
+    setIsRunning(getSharedIsRunning());
+    setActiveScenarioId(getSharedActiveScenarioId());
+
+    const unsubscribeSim = subscribeToSimulation((newData) => {
+      setData(newData);
+
+      const time = newData.time;
+      setEnergyHistory(prev => [...prev.slice(-100), { time, value: newData.totalEnergy / 1000 }]);
+      setPowerHistory(prev => [...prev.slice(-100), { time, value: newData.generatorPower }]);
+      setHeightHistory(prev => [...prev.slice(-100), { time, value: newData.tamperHeight }]);
+
+      if (newData.batteryCapacity < 20 && newData.batteryCapacity > 19) {
+        addAlert('Low Battery!', 'warning');
+      }
+      if ((newData.batteryTemp ?? 25.0) > 45 && (newData.batteryTemp ?? 25.0) < 45.5) {
+        addAlert('Battery Overheating! High temperature warning.', 'error');
+      }
+      if (newData.tamperHeight >= config.maxHeight * 0.99 && newData.tamperHeight < config.maxHeight) {
+        addAlert('Max Height Reached', 'info');
+      }
+    });
+
+    const unsubscribeStateChange = subscribeToScenarioStateChange((state) => {
+      addAlert(`Workflow state transitioned to: ${state}`, 'info');
+    });
+
+    const unsubscribeComplete = subscribeToScenarioComplete(() => {
+      addAlert('Demo workflow cycle completed', 'success');
+      setIsRunning(false);
+      setActiveScenarioId('custom');
+    });
+
     return () => {
-      if (interval) clearInterval(interval);
+      unsubscribeSim();
+      unsubscribeStateChange();
+      unsubscribeComplete();
     };
-  }, [isRunning, updateSimulation]);
+  }, [config, addAlert]);
+
+
+  useEffect(() => {
+    const checkState = setInterval(() => {
+      setIsRunning(getSharedIsRunning());
+      setActiveScenarioId(getSharedActiveScenarioId());
+    }, 100);
+    return () => clearInterval(checkState);
+  }, []);
+
 
   useEffect(() => {
     let isMounted = true;
@@ -117,21 +148,17 @@ export default function Home() {
         const payload = await response.json() as { config?: SimulationConfig };
         const loadedConfig = payload.config ?? DEFAULT_SIMULATION_CONFIG;
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
-        simulation.applyConfiguration(loadedConfig);
+        sharedSimulation.applyConfiguration(loadedConfig);
         setConfig(loadedConfig);
-        setData(simulation.getData());
+        setData(sharedSimulation.getData());
       } catch {
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
-        simulation.applyConfiguration(DEFAULT_SIMULATION_CONFIG);
+        sharedSimulation.applyConfiguration(DEFAULT_SIMULATION_CONFIG);
         setConfig(DEFAULT_SIMULATION_CONFIG);
-        setData(simulation.getData());
+        setData(sharedSimulation.getData());
       }
     };
 
@@ -140,43 +167,46 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, [simulation]);
+  }, []);
 
   const handleStateChange = (state: string) => {
-    if (activeScenarioId !== 'custom') {
-      scenarioRunner.stop();
+    if (getSharedActiveScenarioId() !== 'custom') {
+      sharedScenarioRunner.stop();
+      setSharedActiveScenarioId('custom');
       setActiveScenarioId('custom');
     }
-    simulation.setState(state as SimulationState);
-    setData(simulation.getData());
+    sharedSimulation.setState(state as SimulationState);
+    setData(sharedSimulation.getData());
   };
-  
+
   const handleReset = () => {
-    scenarioRunner.stop();
+    resetSharedSimulation();
+    setIsRunning(false);
     setActiveScenarioId('custom');
-    simulation.reset();
-    setData(simulation.getData());
     setEnergyHistory([]);
     setPowerHistory([]);
     setHeightHistory([]);
-    dataLogger.clear();
     clearAllAlerts();
   };
-  
+
   const handleToggleRunning = () => {
-    if (isRunning && activeScenarioId !== 'custom') {
-      scenarioRunner.stop();
+    const nextRunning = !isRunning;
+    if (nextRunning && getSharedActiveScenarioId() !== 'custom') {
+      sharedScenarioRunner.stop();
+      setSharedActiveScenarioId('custom');
       setActiveScenarioId('custom');
     }
-    setIsRunning(!isRunning);
-    if (!isRunning) {
+    setSharedIsRunning(nextRunning);
+    setIsRunning(nextRunning);
+    if (nextRunning) {
       addAlert('Simulation started', 'success');
     }
   };
-  
+
   const handleConfigChange = async (newConfig: SimulationConfig): Promise<boolean> => {
-    if (activeScenarioId !== 'custom') {
-      scenarioRunner.stop();
+    if (getSharedActiveScenarioId() !== 'custom') {
+      sharedScenarioRunner.stop();
+      setSharedActiveScenarioId('custom');
       setActiveScenarioId('custom');
     }
     if (isConfigSaving) {
@@ -202,8 +232,8 @@ export default function Home() {
       const payload = await response.json() as { config?: SimulationConfig };
       const savedConfig = payload.config ?? newConfig;
 
-      simulation.applyConfiguration(savedConfig);
-      setData(simulation.getData());
+      sharedSimulation.applyConfiguration(savedConfig);
+      setData(sharedSimulation.getData());
       setConfig(savedConfig);
       setConfigSaveState('saved');
       addAlert('Save Successfully', 'success');
@@ -224,48 +254,30 @@ export default function Home() {
       addAlert('Configuration reset to default', 'info');
     }
   };
-  
+
   const handleExportCSV = () => {
-    dataLogger.downloadCSV();
+    sharedDataLogger.downloadCSV();
     addAlert('Data exported to CSV', 'success');
   };
-  
+
   const handleExportJSON = () => {
-    dataLogger.downloadJSON();
+    sharedDataLogger.downloadJSON();
     addAlert('Data exported to JSON', 'success');
   };
-  
+
   const handleSelectScenario = (scenario: Scenario) => {
-    scenarioRunner.stop();
+    startSharedScenario(scenario);
+    setIsRunning(scenario.id !== 'custom');
     setActiveScenarioId(scenario.id);
-    
-    simulation.applyConfiguration(scenario.config);
-    setConfig(scenario.config);
-    setData(simulation.getData());
-    
     if (scenario.id !== 'custom') {
-      setIsRunning(true);
-      scenarioRunner.startScenario(
-        scenario,
-        (nextState) => {
-          simulation.setState(nextState as SimulationState);
-          setData(simulation.getData());
-          addAlert(`Workflow state transitioned to: ${nextState}`, 'info');
-        },
-        () => {
-          setIsRunning(false);
-          setActiveScenarioId('custom');
-          addAlert('Demo workflow cycle completed', 'success');
-        }
-      );
+      addAlert('Simulation started with scenario', 'info');
     } else {
-      setIsRunning(false);
       addAlert('Switched to manual control scenario', 'info');
     }
   };
-  
+
   const handleSaveToHistory = () => {
-    const stats = dataLogger.getStatistics();
+    const stats = sharedDataLogger.getStatistics();
     setHistoricalData(prev => [...prev, {
       id: Date.now().toString(),
       name: `Run ${prev.length + 1}`,
@@ -274,7 +286,7 @@ export default function Home() {
     }]);
     addAlert('Simulation saved to history', 'success');
   };
-  
+
   const handleTamperClick = () => {
     setPopupTitle('Tamper Details (Solid Cylinder)');
     const volume = calculateCylinderVolume(data.tamperMass);
@@ -361,10 +373,10 @@ export default function Home() {
     });
     setPopupOpen(true);
   };
-  
+
   const handleSoilClick = () => {
     setPopupTitle('Soil Details');
-    
+
     const soilName = (() => {
       switch (data.soilType) {
         case 'sand': return 'Sand';
@@ -426,7 +438,7 @@ export default function Home() {
     });
     setPopupOpen(true);
   };
-  
+
   const handleHeightClick = () => {
     setPopupTitle('Height Analysis');
     setPopupData({
@@ -468,7 +480,7 @@ export default function Home() {
     });
     setPopupOpen(true);
   };
-  
+
   const handleStateClick = () => {
     setPopupTitle('Impact Mechanics');
     setPopupData({
@@ -516,10 +528,10 @@ export default function Home() {
     });
     setPopupOpen(true);
   };
-  
+
   const handleCompactionClick = () => {
     setPopupTitle('Compaction Details');
-    
+
     const soilName = (() => {
       switch (data.soilType) {
         case 'sand': return 'Sand';
@@ -575,13 +587,13 @@ export default function Home() {
     setPopupOpen(true);
   };
 
-  const statistics = dataLogger.getStatistics();
-  
+  const statistics = sharedDataLogger.getStatistics();
+
   return (
     <div className="min-h-screen bg-[#070b19] bg-[radial-gradient(ellipse_at_top,rgba(30,58,138,0.2),transparent_50%),radial-gradient(circle_at_bottom,rgba(88,28,135,0.15),transparent_60%)] p-4 sm:p-6 text-slate-100 relative">
       {/* Alert System */}
       <AlertSystem alerts={alerts} onDismiss={dismissAlert} />
-      
+
       {/* Configuration Panel */}
       <ConfigurationPanel
         key={JSON.stringify(config)}
@@ -593,7 +605,7 @@ export default function Home() {
         isOpen={configOpen}
         onToggle={() => setConfigOpen(!configOpen)}
       />
-      
+
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between relative z-10">
         <div className="max-w-2xl">
@@ -604,9 +616,17 @@ export default function Home() {
             Artificial Dynamic Compaction Telemetry Console
           </p>
         </div>
-        
+
         {/* Header Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/simulator"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider"
+          >
+            <Activity className="w-4 h-4" />
+            Rig Simulator
+          </Link>
+
           {/* Export Buttons */}
           <button
             onClick={handleExportCSV}
@@ -616,7 +636,7 @@ export default function Home() {
             <Download className="w-4 h-4" />
             CSV
           </button>
-          
+
           <button
             onClick={handleExportJSON}
             className="flex items-center gap-2 bg-slate-900/80 border border-slate-850 hover:border-slate-700 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider"
@@ -625,7 +645,7 @@ export default function Home() {
             <Download className="w-4 h-4" />
             JSON
           </button>
-          
+
           <button
             onClick={() => setShowHistorical(!showHistorical)}
             className="flex items-center gap-2 bg-slate-900/80 border border-slate-850 hover:border-slate-700 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer font-bold text-xs uppercase tracking-wider"
@@ -636,7 +656,7 @@ export default function Home() {
           </button>
         </div>
       </div>
-      
+
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-12 gap-5 relative z-10">
         {/* Left Column - Visualization */}
@@ -667,7 +687,7 @@ export default function Home() {
                 })}
               </div>
             </div>
-            
+
             <div className="h-auto">
               <PitVisualization
                 height={data.tamperHeight}
@@ -699,7 +719,7 @@ export default function Home() {
               />
             </div>
           </div>
-          
+
           {/* Control Panel */}
           <ControlPanel
             currentState={data.state}
@@ -711,7 +731,7 @@ export default function Home() {
             onSelectScenario={handleSelectScenario}
             activeScenarioId={activeScenarioId}
           />
-          
+
           {/* Report Generator */}
           <ReportGenerator
             statistics={statistics}
@@ -719,7 +739,7 @@ export default function Home() {
             onGenerateReport={() => addAlert('Report generated', 'success')}
           />
         </div>
-        
+
         {/* Right Column - Metrics and Gauges */}
         <div className="col-span-12 lg:col-span-6 space-y-4 min-w-0">
           {/* Historical Comparison (when shown) */}
@@ -731,7 +751,7 @@ export default function Home() {
               />
             </div>
           )}
-          
+
           {/* Power Gauges Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <PowerGauge
@@ -767,12 +787,12 @@ export default function Home() {
               color="#f43f5e"
             />
           </div>
-          
+
           {/* Battery and Metrics Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <BatteryBar
               capacity={data.batteryCapacity}
-              voltage={data.voltageTerminal ?? data.batteryVoltage ?? 24.0} 
+              voltage={data.voltageTerminal ?? data.batteryVoltage ?? 24.0}
               current={data.batteryCurrent}
             />
             <EnergyMetrics
@@ -788,7 +808,7 @@ export default function Home() {
             />
           </div>
 
-          
+
           {/* Charts Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <RealTimeChart
@@ -816,7 +836,7 @@ export default function Home() {
               type="area"
             />
           </div>
-          
+
           {/* System Status */}
           <div className="cyber-glass rounded-2xl p-5 shadow-2xl">
             <h3 className="font-bold text-slate-200 mb-3 text-xs tracking-wider uppercase">System Telemetry Log</h3>
@@ -850,7 +870,7 @@ export default function Home() {
           </button>
         </div>
       </div>
-      
+
       {/* Detailed Info Popup */}
       <DetailedInfoPopup
         isOpen={popupOpen}

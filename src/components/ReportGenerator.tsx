@@ -19,7 +19,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
     const year = now.getUTCFullYear();
     return `${day}/${month}/${year}`;
   }, []);
-  
+
   const generatePDFReport = () => {
     const reportContent = `
 <!DOCTYPE html>
@@ -218,7 +218,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
 </body>
 </html>
     `;
-    
+
     const blob = new Blob([reportContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -228,10 +228,10 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
+
     onGenerateReport();
   };
-  
+
   return (
     <div className="cyber-glass rounded-2xl p-5 shadow-2xl">
       <div className="flex items-center justify-between mb-4">
@@ -249,7 +249,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
           {reportDate}
         </div>
       </div>
-      
+
       <div className="space-y-3 mb-4">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
@@ -274,7 +274,7 @@ export default function ReportGenerator({ statistics, config, onGenerateReport }
           <div className="text-base font-bold text-slate-200 mt-1" style={{ fontFamily: 'var(--font-mono), monospace' }}>{(statistics.netEnergy / 1000).toFixed(1)} kJ</div>
         </div>
       </div>
-      
+
       <button
         onClick={generatePDFReport}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white py-3 px-4 rounded-xl font-bold text-sm tracking-wider uppercase shadow-lg shadow-purple-500/10 cursor-pointer transition-all duration-300"

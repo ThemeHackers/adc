@@ -84,11 +84,11 @@ export class DataLogger {
   private logs: SimulationLogEntry[] = [];
   private maxLogs: number;
   private readonly electricityTariff = THAI_LARGE_BUSINESS_AVERAGE_TARIFF_2026;
-  
+
   constructor(maxLogs: number = 10000) {
     this.maxLogs = maxLogs;
   }
-  
+
   public log(data: SimulationSample | LegacySimulationSample): void {
     const normalized = normalizeTamperFields(data);
 
@@ -120,52 +120,52 @@ export class DataLogger {
       soilCompaction: normalized.soilCompaction,
       impactCount: normalized.impactCount
     };
-    
+
     this.logs.push(entry);
-    
+
 
     if (this.logs.length > this.maxLogs) {
       this.logs = this.logs.slice(-this.maxLogs);
     }
   }
-  
+
   public getLogs(): SimulationLogEntry[] {
     return [...this.logs];
   }
-  
+
   public clear(): void {
     this.logs = [];
   }
-  
+
   public exportToCSV(): string {
     if (this.logs.length === 0) {
       return '';
     }
-    
+
     const headers = Object.keys(this.logs[0]).join(',');
-    const rows = this.logs.map(log => 
-      Object.values(log).map(value => 
+    const rows = this.logs.map(log =>
+      Object.values(log).map(value =>
         typeof value === 'string' ? `"${value}"` : value
       ).join(',')
     );
-    
+
     return [headers, ...rows].join('\n');
   }
-  
+
   public exportToJSON(): string {
     return JSON.stringify(this.logs, null, 2);
   }
-  
+
   public downloadCSV(filename: string = 'adc_simulation_data.csv'): void {
     const csv = this.exportToCSV();
     this.downloadFile(csv, filename, 'text/csv');
   }
-  
+
   public downloadJSON(filename: string = 'adc_simulation_data.json'): void {
     const json = this.exportToJSON();
     this.downloadFile(json, filename, 'application/json');
   }
-  
+
   private downloadFile(content: string, filename: string, mimeType: string): void {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -177,7 +177,7 @@ export class DataLogger {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
-  
+
   public getStatistics(): SimulationStatistics {
     if (this.logs.length === 0) {
       return {
@@ -271,7 +271,7 @@ export class DataLogger {
     );
     const compactionPerImpact = totalImpacts > 0 ? maxSoilCompaction / totalImpacts : 0;
     const densityGainPerImpact = totalImpacts > 0 ? (finalSoilDensity - firstLog.soilDensity) / totalImpacts : 0;
-    
+
     return {
       sampleCount: this.logs.length,
       totalTime,

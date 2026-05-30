@@ -48,7 +48,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
       stability: currentData.batteryStabilityIndex
     }] : [])
   ];
-  
+
   type ComparisonMetricKey = 'energy' | 'impacts' | 'compaction' | 'motorPower' | 'generatorPower' | 'battery' | 'density' | 'time' | 'consumed' | 'efficiency' | 'stability';
 
   const calculateStats = (key: ComparisonMetricKey) => {
@@ -60,13 +60,13 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
       min: Math.min(...values)
     };
   };
-  
+
   const energyStats = calculateStats('energy');
   const impactStats = calculateStats('impacts');
   const compactionStats = calculateStats('compaction');
   const efficiencyStats = calculateStats('efficiency');
   const stabilityStats = calculateStats('stability');
-  
+
   return (
     <div className="cyber-glass rounded-2xl p-6 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
@@ -85,7 +85,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
           </span>
         </div>
       </div>
-      
+
       {comparisonData.length === 0 ? (
         <div className="text-center py-12 text-slate-500 bg-slate-950/20 border border-slate-800/80 rounded-2xl">
           <History className="w-16 h-16 mx-auto mb-4 opacity-15" />
@@ -103,7 +103,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </div>
               <div className="text-lg font-black text-slate-200" style={{ fontFamily: 'var(--font-mono), monospace' }}>{energyStats.max.toFixed(2)} <span className="text-xs text-slate-400 font-medium">kJ</span></div>
             </div>
-            
+
             <div className="bg-blue-950/10 border border-blue-500/20 rounded-xl p-3.5 shadow-md">
               <div className="flex items-center gap-2 mb-2 text-blue-400">
                 <TrendingUp className="w-4 h-4" />
@@ -111,7 +111,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </div>
               <div className="text-lg font-black text-slate-200" style={{ fontFamily: 'var(--font-mono), monospace' }}>{energyStats.avg.toFixed(2)} <span className="text-xs text-slate-400 font-medium">kJ</span></div>
             </div>
-            
+
             <div className="bg-amber-950/10 border border-amber-500/20 rounded-xl p-3.5 shadow-md">
               <div className="flex items-center gap-2 mb-2 text-amber-400">
                 <Activity className="w-4 h-4" />
@@ -119,7 +119,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </div>
               <div className="text-lg font-black text-slate-200" style={{ fontFamily: 'var(--font-mono), monospace' }}>{impactStats.max.toFixed(0)}</div>
             </div>
-            
+
             <div className="bg-purple-950/10 border border-purple-500/20 rounded-xl p-3.5 shadow-md">
               <div className="flex items-center gap-2 mb-2 text-purple-400">
                 <Gauge className="w-4 h-4" />
@@ -127,7 +127,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </div>
               <div className="text-lg font-black text-slate-200" style={{ fontFamily: 'var(--font-mono), monospace' }}>{efficiencyStats.avg.toFixed(1)}%</div>
             </div>
-            
+
             <div className="bg-teal-950/10 border border-teal-500/20 rounded-xl p-3.5 shadow-md">
               <div className="flex items-center gap-2 mb-2 text-teal-400">
                 <Mountain className="w-4 h-4" />
@@ -135,7 +135,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </div>
               <div className="text-lg font-black text-slate-200" style={{ fontFamily: 'var(--font-mono), monospace' }}>{compactionStats.avg.toFixed(1)}%</div>
             </div>
-            
+
             <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 shadow-md">
               <div className="flex items-center gap-2 mb-2 text-slate-400">
                 <TrendingDown className="w-4 h-4" />
@@ -144,7 +144,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               <div className="text-lg font-black text-slate-200" style={{ fontFamily: 'var(--font-mono), monospace' }}>{stabilityStats.avg.toFixed(1)}%</div>
             </div>
           </div>
-          
+
           {/* Energy Comparison */}
           <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 shadow-inner">
             <h4 className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
@@ -172,7 +172,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </BarChart>
             </ResponsiveContainer>
           </div>
-          
+
           {/* Power Systems & Battery Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 shadow-inner">
@@ -199,7 +199,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-            
+
             <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 shadow-inner">
               <h4 className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
                 <Gauge className="w-4 h-4 text-amber-400" />
@@ -227,7 +227,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Impacts & Compaction Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 shadow-inner">
@@ -253,7 +253,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            
+
             <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 shadow-inner">
               <h4 className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
                 <Droplet className="w-4 h-4 text-emerald-400" />
@@ -281,7 +281,7 @@ export default function HistoricalComparison({ historicalData, currentData }: Hi
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Detailed Metrics Table */}
           <div className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-4 shadow-inner overflow-x-auto">
             <h4 className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-2 uppercase tracking-wider">

@@ -17,24 +17,24 @@ export default function BatteryBar({ capacity, voltage, current, state }: Batter
     if (capacity > 25) return <BatteryLow className="w-8 h-8" />;
     return <Battery className="w-8 h-8" />;
   };
-  
+
   const getBatteryColor = () => {
     if (capacity > 75) return { text: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', gradient: 'from-emerald-400 to-teal-500', glow: 'rgba(16,185,129,0.3)' };
     if (capacity > 50) return { text: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10', gradient: 'from-amber-400 to-orange-500', glow: 'rgba(245,158,11,0.3)' };
     if (capacity > 25) return { text: 'text-orange-400', border: 'border-orange-500/30', bg: 'bg-orange-500/10', gradient: 'from-orange-400 to-rose-500', glow: 'rgba(249,115,22,0.3)' };
     return { text: 'text-rose-400', border: 'border-rose-500/30', bg: 'bg-rose-500/10', gradient: 'from-rose-500 to-red-600', glow: 'rgba(244,63,94,0.3)' };
   };
-  
+
   const colors = getBatteryColor();
   const isCharging = state ? state === 'CHARGING' : current > 0;
   const flowLabel = state === 'DISCHARGING' ? 'Energy Recovery' : isCharging ? 'Charging Mode' : 'Standby Mode';
   const currentSign = current > 0 ? '+' : current < 0 ? '-' : '';
-  
+
   return (
     <div className="cyber-glass rounded-2xl p-5 shadow-2xl transition-all duration-300 hover:border-slate-700/80">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div 
+          <div
             className={`p-2.5 rounded-xl border ${colors.text} ${colors.bg} ${colors.border}`}
             style={{ boxShadow: `0 0 10px ${colors.glow}` }}
           >
@@ -54,7 +54,7 @@ export default function BatteryBar({ capacity, voltage, current, state }: Batter
           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">System Voltage</div>
         </div>
       </div>
-      
+
       {/* Battery capacity bar */}
       <div className="mb-4">
         <div className="flex justify-between text-xs mb-2">
@@ -64,19 +64,19 @@ export default function BatteryBar({ capacity, voltage, current, state }: Batter
         <div className="w-full h-7 bg-slate-950/80 rounded-full overflow-hidden border border-slate-800 p-0.5 shadow-inner">
           <div
             className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${colors.gradient}`}
-            style={{ 
+            style={{
               width: `${capacity}%`,
               boxShadow: `0 0 8px ${colors.glow}`
             }}
           />
         </div>
       </div>
-      
+
       {/* Current flow indicator */}
       <div className="flex items-center justify-between text-xs bg-slate-950/40 border border-slate-800/80 rounded-xl p-3">
         <div className="flex items-center gap-2">
-          <div 
-            className={`w-2.5 h-2.5 rounded-full ${isCharging ? 'bg-emerald-500' : state === 'DISCHARGING' ? 'bg-blue-500' : 'bg-rose-500'} animate-pulse`} 
+          <div
+            className={`w-2.5 h-2.5 rounded-full ${isCharging ? 'bg-emerald-500' : state === 'DISCHARGING' ? 'bg-blue-500' : 'bg-rose-500'} animate-pulse`}
             style={{ boxShadow: `0 0 6px ${isCharging ? '#10b981' : state === 'DISCHARGING' ? '#3b82f6' : '#f43f5e'}` }}
           />
           <span className="font-bold text-slate-300 uppercase tracking-wider">

@@ -48,11 +48,11 @@ export default function DetailedInfoPopup({ isOpen, onClose, title, data }: Deta
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {item.icon && (
-                    <div 
+                    <div
                       className="p-2 rounded-xl border"
-                      style={{ 
-                        backgroundColor: item.color ? `${item.color}10` : 'rgba(148,163,184,0.1)', 
-                        borderColor: item.color ? `${item.color}20` : 'rgba(148,163,184,0.2)' 
+                      style={{
+                        backgroundColor: item.color ? `${item.color}10` : 'rgba(148,163,184,0.1)',
+                        borderColor: item.color ? `${item.color}20` : 'rgba(148,163,184,0.2)'
                       }}
                     >
                       <div style={{ color: item.color || '#94a3b8' }}>{item.icon}</div>
@@ -61,10 +61,10 @@ export default function DetailedInfoPopup({ isOpen, onClose, title, data }: Deta
                   <div>
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{item.label}</div>
                     <div className="text-xl font-black text-slate-100 mt-0.5" style={{ fontFamily: 'var(--font-mono), monospace' }}>
-                      {typeof item.value === 'number' 
-                        ? Number.isInteger(item.value) 
-                          ? item.value.toString() 
-                          : item.value.toFixed(2) 
+                      {typeof item.value === 'number'
+                        ? Number.isInteger(item.value)
+                          ? item.value.toString()
+                          : item.value.toFixed(2)
                         : item.value}
                       {item.unit && <span className="text-xs text-slate-400 font-bold ml-1 uppercase tracking-widest">{item.unit}</span>}
                     </div>

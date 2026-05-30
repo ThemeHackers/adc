@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 export interface Alert {
@@ -154,7 +154,7 @@ export function useAlertManager() {
   const lastAlertAtRef = useRef<Map<string, number>>(new Map());
   const activeAlertBySignatureRef = useRef<Map<string, string>>(new Map());
 
-  const addAlert = (message: string, type: Alert['type'] = 'info', autoDismiss = true) => {
+  const addAlert = useCallback((message: string, type: Alert['type'] = 'info', autoDismiss = true) => {
     const signature = `${type}:${message}`;
     const now = Date.now();
     const lastShownAt = lastAlertAtRef.current.get(signature) ?? 0;
@@ -182,9 +182,9 @@ export function useAlertManager() {
     });
 
     return id;
-  };
+  }, []);
 
-  const dismissAlert = (id: string) => {
+  const dismissAlert = useCallback((id: string) => {
     setAlerts(prev => {
       const dismissed = prev.find(alert => alert.id === id);
 
@@ -195,13 +195,13 @@ export function useAlertManager() {
 
       return prev.filter(alert => alert.id !== id);
     });
-  };
+  }, []);
 
-  const clearAllAlerts = () => {
+  const clearAllAlerts = useCallback(() => {
     setAlerts([]);
     lastAlertAtRef.current.clear();
     activeAlertBySignatureRef.current.clear();
-  };
+  }, []);
 
   return {
     alerts,

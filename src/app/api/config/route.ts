@@ -20,7 +20,7 @@ const readConfigFromDisk = async (): Promise<SimulationConfig> => {
     try {
       await writeConfigToDisk(config);
     } catch {
-     
+
     }
     return config;
   } catch {
@@ -30,7 +30,7 @@ const readConfigFromDisk = async (): Promise<SimulationConfig> => {
     try {
       await writeConfigToDisk(DEFAULT_SIMULATION_CONFIG);
     } catch {
-    
+
     }
     return DEFAULT_SIMULATION_CONFIG;
   }
@@ -50,11 +50,11 @@ export async function POST(request: Request) {
         : body;
 
     const config = sanitizeSimulationConfig(payload);
-    
-   
+
+
     inMemoryConfig = config;
 
-    
+
     try {
       await writeConfigToDisk(config);
     } catch (err) {

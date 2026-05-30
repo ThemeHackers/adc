@@ -40,11 +40,11 @@ export default function ControlPanel({
       default: return 'text-slate-400';
     }
   };
-  
+
   return (
     <div className="cyber-glass rounded-2xl p-5 shadow-2xl">
       <h3 className="font-bold text-slate-200 mb-4 tracking-wide uppercase text-xs">Command Console</h3>
-      
+
       {/* State selection */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         {states.map((state) => (
@@ -60,7 +60,7 @@ export default function ControlPanel({
           </button>
         ))}
       </div>
-      
+
       {/* Control buttons */}
       <div className="flex gap-2">
         <button
@@ -83,7 +83,7 @@ export default function ControlPanel({
             </>
           )}
         </button>
-        
+
         <button
           onClick={onReset}
           className="flex-1 flex items-center justify-center gap-1.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-slate-100 font-black text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 cursor-pointer shadow-lg shadow-slate-900/30"
@@ -115,7 +115,7 @@ export default function ControlPanel({
           ))}
         </div>
       </div>
-      
+
       {/* Current state indicator */}
       <div className="mt-4 p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl flex items-center justify-between">
         <div>

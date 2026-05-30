@@ -133,10 +133,11 @@ $$E_g = K_e \cdot G \cdot |v|$$
 
 #### 4.2 Charging Current ($I_a$)
 Current flows into the battery only when the Back EMF exceeds the battery terminal voltage:
-$$I_a = \max\left(0,\ \frac{E_g - V_{\text{batt}}}{R_{\text{load}} + R_{\text{gen\\_int}}}\right)$$
+$$I_a = \max\left(0,\ \frac{E_g - V_{\text{batt}}}{R_{\text{load}} + R_{\text{gen\\_int}} + R_{\text{batt\\_int}}}\right)$$
 *   $I_a$: Armature current charging the battery ($\text{A}$)
 *   $R_{\text{load}}$: Load resistance ($\Omega$)
 *   $R_{\text{gen\\_int}}$: Generator internal resistance $= 0.4\ \Omega$ (constant `GENERATOR_INTERNAL_RESISTANCE`)
+*   $R_{\text{batt\\_int}}$: Battery internal resistance ($0.04\ \Omega$ for 24V system, $0.08\ \Omega$ for 48V system)
 
 #### 4.3 Electromagnetic Braking Force ($F_{\text{brake}}$)
 $$F_{\text{brake}} = K_t \cdot G \cdot I_a \cdot \text{sign}(v)$$
@@ -217,7 +218,7 @@ $$V_{terminal} = \max\left(0,\ V_{oc} + I_{batt} \cdot R_{\text{batt\\_int}}\rig
 *   $I_{batt}$: Net current (positive for charging, negative for discharging)
 
 #### 6.4 Capacity Delta ($\Delta Capacity\%$)
-$$\Delta Capacity\% = \frac{I_{batt} \cdot dt_{sub}}{\text{Capacity}_{Ah}} \cdot 100$$
+$$\Delta Capacity\% = \frac{I_{batt} \cdot dt_{sub}}{\text{Capacity}_{Ah} \cdot 3,600} \cdot 100$$
 *   $\text{Capacity}_{Ah}$: Battery reference capacity $= 50\text{ Ah}$ (constant `BATTERY_REFERENCE_CAPACITY_AH`)
 
 #### 6.5 Thermal Loss and Temperature ($T_{batt}$)

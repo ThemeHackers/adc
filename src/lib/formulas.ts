@@ -40,7 +40,9 @@ export function calculateBatteryCapacityDelta(
   dtSeconds: number,
   capacityAh: number = BATTERY_REFERENCE_CAPACITY_AH,
 ): number {
-  return (batteryCurrentA * dtSeconds / capacityAh) * 100;
+
+  const capacityAs = capacityAh * 3600;
+  return (batteryCurrentA * dtSeconds / capacityAs) * 100;
 }
 
 export function normalizeRawValue(rawValue: number, minRaw: number, maxRaw: number): number {
@@ -67,8 +69,8 @@ export function calibrateLinearValue(
   return (calibrated + offset) * scale;
 }
 
-export const CYLINDER_DENSITY_STEEL = 7850; 
-export const CYLINDER_ASPECT_RATIO_H_TO_R = 3; 
+export const CYLINDER_DENSITY_STEEL = 7850;
+export const CYLINDER_ASPECT_RATIO_H_TO_R = 3;
 
 export function calculateCylinderVolume(massKg: number, density: number = CYLINDER_DENSITY_STEEL): number {
   return massKg / density;
@@ -91,24 +93,24 @@ export function calculateCylinderImpactPressure(forceNewtons: number, radiusM: n
   return area > 0 ? forceNewtons / area : 0;
 }
 
-// ==========================================
-// NEW PHYSICS & MATHEMATICS ENGINE ADDITIONS
-// ==========================================
 
-export const AIR_DENSITY = 1.225; // kg/m^3
-export const AMBIENT_TEMP = 25.0; // °C
-export const BATTERY_THERMAL_MASS = 1200; // J/K
-export const BATTERY_COOLING_COEFF = 1.5; // W/K
-export const GENERATOR_COUPLING_FACTOR = 0.15; // Ke/Kt equivalent factor
-export const GENERATOR_INTERNAL_RESISTANCE = 0.4; // Ohm
+
+
+
+export const AIR_DENSITY = 1.225;
+export const AMBIENT_TEMP = 25.0;
+export const BATTERY_THERMAL_MASS = 1200;
+export const BATTERY_COOLING_COEFF = 1.5;
+export const GENERATOR_COUPLING_FACTOR = 0.15;
+export const GENERATOR_INTERNAL_RESISTANCE = 0.4;
 
 export type SoilType = 'sand' | 'clay' | 'gravel' | 'loam';
 
 export interface SoilProperties {
   initialDensity: number;
   maxDensity: number;
-  initialStiffness: number; // k0 (N/m)
-  ultimateBearingCapacity: number; // qu (Pa)
+  initialStiffness: number;
+  ultimateBearingCapacity: number;
 }
 
 export const SOIL_DATABASE: Record<SoilType, SoilProperties> = {
@@ -139,15 +141,15 @@ export const SOIL_DATABASE: Record<SoilType, SoilProperties> = {
 };
 
 export function calculateDragForce(velocityMps: number, areaM2: number, Cd: number): number {
-  // Fd = 0.5 * rho * Cd * A * v^2 * sign(v)
-  const direction = velocityMps >= 0 ? 1 : -1;
+
+  const direction = velocityMps >= 0 ? -1 : 1;
   return 0.5 * AIR_DENSITY * Cd * areaM2 * Math.pow(velocityMps, 2) * direction;
 }
 
 export function calculateSoilStiffness(compactionPercent: number, soilType: SoilType): number {
   const props = SOIL_DATABASE[soilType] || SOIL_DATABASE.sand;
   const ratio = Math.max(0, Math.min(100, compactionPercent)) / 100;
-  // Non-linear increase: stiffness increases by up to 4x at full compaction
+
   return props.initialStiffness * (1 + 3 * Math.pow(ratio, 2));
 }
 
@@ -161,13 +163,13 @@ export function calculateImpactMechanics(
     return { peakForceN: 0, craterDepthM: 0, contactPressurePa: 0, plasticDeformation: false };
   }
 
-  // Work-Energy: Ek = 0.5 * ks * d_crater^2  => d_crater = sqrt(2 * Ek / ks)
+
   const craterDepthM = Math.sqrt((2 * kineticEnergyJ) / soilStiffnessNm);
-  // Fpeak = ks * d_crater
+
   const peakForceN = soilStiffnessNm * craterDepthM;
-  // Contact Pressure: P = F / A
+
   const contactPressurePa = bottomAreaM2 > 0 ? peakForceN / bottomAreaM2 : 0;
-  // Plastic compaction occurs if impact pressure exceeds bearing capacity
+
   const plasticDeformation = contactPressurePa > ultimateBearingCapacityPa;
 
   return {
@@ -179,8 +181,8 @@ export function calculateImpactMechanics(
 }
 
 export function calculateGeneratorEMF(velocityMps: number, gearRatio: number): number {
-  // Back EMF: Eg = Ke * omega_generator, where omega_generator = (v / pulley_radius) * gearRatio.
-  // We combine Ke and mechanical constants into GENERATOR_COUPLING_FACTOR.
+
+
   return GENERATOR_COUPLING_FACTOR * gearRatio * Math.abs(velocityMps);
 }
 
@@ -190,9 +192,10 @@ export function calculateGeneratorCurrent(
   loadResistance: number,
 ): number {
   if (emfVolts <= batteryVoltage) {
-    return 0; // Current blocked by rectifier/diodes
+    return 0;
   }
-  const totalResistance = loadResistance + GENERATOR_INTERNAL_RESISTANCE;
+  const rInt = batteryVoltage > 36 ? 0.08 : 0.04;
+  const totalResistance = loadResistance + GENERATOR_INTERNAL_RESISTANCE + rInt;
   return (emfVolts - batteryVoltage) / totalResistance;
 }
 
@@ -201,23 +204,22 @@ export function calculateGeneratorBrakingForce(
   gearRatio: number,
   velocityMps: number,
 ): number {
-  // F_brake = Kt * gearRatio * Ia * sign(v)
-  // Assumes Kt = Ke (ideal coupling)
-  const direction = velocityMps >= 0 ? 1 : -1;
+
+  const direction = velocityMps >= 0 ? -1 : 1;
   return GENERATOR_COUPLING_FACTOR * gearRatio * currentAmps * direction;
 }
 
 export function getBatteryOCV(capacityPercent: number, systemVoltage: number): number {
   const soc = Math.max(0, Math.min(100, capacityPercent)) / 100;
   if (systemVoltage > 36) {
-    return 44.0 + soc * 12.0; // 48V Lithium-ion system range (44V to 56V)
+    return 44.0 + soc * 12.0;
   } else {
-    return 22.0 + soc * 6.0;  // 24V Lithium-ion system range (22V to 28V)
+    return 22.0 + soc * 6.0;
   }
 }
 
 export function getBatteryInternalResistance(systemVoltage: number): number {
-  return systemVoltage > 36 ? 0.08 : 0.04; // 48V has higher internal resistance
+  return systemVoltage > 36 ? 0.08 : 0.04;
 }
 
 export function calculateBatteryTerminalVoltage(
@@ -227,7 +229,7 @@ export function calculateBatteryTerminalVoltage(
 ): number {
   const ocv = getBatteryOCV(capacityPercent, systemVoltage);
   const rInt = getBatteryInternalResistance(systemVoltage);
-  // Charging (current > 0) increases terminal voltage, discharging (current < 0) decreases it
+
   return Math.max(0, ocv + currentAmps * rInt);
 }
 
@@ -238,11 +240,11 @@ export function calculateBatteryTemperatureDelta(
   dtSeconds: number,
 ): number {
   const rInt = getBatteryInternalResistance(systemVoltage);
-  // I^2 * R heating
+
   const heatGeneratedW = Math.pow(currentAmps, 2) * rInt;
-  // Convective cooling: P_cool = h_cool * (T_batt - T_amb)
+
   const heatDissipatedW = BATTERY_COOLING_COEFF * (currentTempCelsius - AMBIENT_TEMP);
-  // dT = (P_heat - P_cool) / C_thermal * dt
+
   const dT_dt = (heatGeneratedW - heatDissipatedW) / BATTERY_THERMAL_MASS;
   return dT_dt * dtSeconds;
 }

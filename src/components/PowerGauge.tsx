@@ -16,7 +16,7 @@ interface PowerGaugeProps {
 export default function PowerGauge({ title, value, min = 0, max, unit, icon, color }: PowerGaugeProps) {
   const range = max - min;
   const percentage = range > 0 ? Math.max(0, Math.min(((value - min) / range) * 100, 100)) : 0;
-  
+
   const getIcon = () => {
     switch (icon) {
       case 'sun':
@@ -29,15 +29,15 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
         return <Zap className="w-5 h-5 sm:w-6 sm:h-6" />;
     }
   };
-  
+
   return (
     <div className="cyber-glass rounded-2xl p-4 sm:p-5 shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:border-slate-600/50 hover:shadow-[0_0_15px_rgba(255,255,255,0.03)]">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div 
+          <div
             className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-inner border shrink-0"
-            style={{ 
-              backgroundColor: `${color}10`, 
+            style={{
+              backgroundColor: `${color}10`,
               borderColor: `${color}30`,
               boxShadow: `0 0 10px ${color}15`
             }}
@@ -46,16 +46,16 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
           </div>
           <h3 className="font-bold text-slate-100 text-[10px] sm:text-xs md:text-sm tracking-wide leading-tight line-clamp-2">{title}</h3>
         </div>
-        <div 
+        <div
           className="w-2 h-2 rounded-full animate-pulse shadow-lg"
-          style={{ 
-            backgroundColor: color, 
+          style={{
+            backgroundColor: color,
             opacity: value > 0 ? 1 : 0.3,
             boxShadow: value > 0 ? `0 0 8px ${color}` : 'none'
           }}
         />
       </div>
-      
+
       <div className="relative h-32 sm:h-36">
         <svg viewBox="0 0 200 120" className="w-full h-full">
           <defs>
@@ -64,7 +64,7 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
               <stop offset="100%" stopColor={color}/>
             </linearGradient>
           </defs>
-          
+
           {/* Background arc */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
@@ -74,7 +74,7 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
             strokeLinecap="round"
             opacity="0.6"
           />
-          
+
           {/* Value arc */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
@@ -83,12 +83,12 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
             strokeWidth="12"
             strokeLinecap="round"
             strokeDasharray={`${percentage * 2.51} 251`}
-            style={{ 
+            style={{
               transition: 'stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
               filter: `drop-shadow(0 0 4px ${color}50)`
             }}
           />
-          
+
           {/* Value text */}
           <text
             x="100"
@@ -99,7 +99,7 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
           >
             {value.toFixed(0)}
           </text>
-          
+
           {/* Unit text */}
           <text
             x="100"
@@ -111,7 +111,7 @@ export default function PowerGauge({ title, value, min = 0, max, unit, icon, col
           </text>
         </svg>
       </div>
-      
+
       <div className="mt-1 flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
         <span>{min}</span>
         <span>{max}</span>

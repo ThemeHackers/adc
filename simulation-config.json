@@ -1,0 +1,16 @@
+{
+  "tamperMass": 500,
+  "maxHeight": 15,
+  "gravity": 9.81,
+  "motorPower": 650,
+  "solarPower": 750,
+  "batteryVoltage": 24,
+  "batteryCapacity": 50,
+  "motorEfficiency": 0.85,
+  "generatorEfficiency": 0.9,
+  "initialSoilDensity": 1600,
+  "soilType": "sand",
+  "dragCoefficient": 0.82,
+  "gearRatio": 250,
+  "loadResistance": 2
+}

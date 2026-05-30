@@ -34,7 +34,7 @@ export default function RealTimeChart({
   type = 'line'
 }: RealTimeChartProps) {
   const chartData = data.slice(-maxDataPoints);
-  
+
   return (
     <div className="cyber-glass rounded-2xl p-5 shadow-2xl transition-all duration-300 hover:border-slate-700/80">
       <div className="flex items-center justify-between mb-4">
@@ -43,9 +43,9 @@ export default function RealTimeChart({
           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Live Telemetry</span>
         </div>
         <div className="flex items-center gap-2 bg-slate-950/40 border border-slate-800/80 px-2.5 py-1.5 rounded-xl">
-          <div 
+          <div
             className="w-2 h-2 rounded-full"
-            style={{ 
+            style={{
               backgroundColor: color,
               boxShadow: `0 0 6px ${color}`
             }}

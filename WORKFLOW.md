@@ -103,11 +103,11 @@ sequenceDiagram
 1.  **Gravity Release:** Tamper falls under gravity, generating velocity $v$.
 2.  **Back EMF Generation:** The spinning pulley generates EMF ($E_g = 0.15 \cdot G \cdot |v|$).
 3.  **Rectification Block:** Current flows only if Back EMF exceeds the battery voltage:
-    $$I_a = \max\left(0, \frac{E_g - V_{batt}}{R_{load} + R_{\text{gen\\_int}}}\right)$$
+    $$I_a = \max\left(0, \frac{E_g - V_{batt}}{R_{load} + R_{\text{gen\\_int}} + R_{\text{batt\\_int}}}\right)$$
 4.  **Braking Torque Feedback:** The armature current induces electromagnetic braking:
     $$F_{brake} = 0.15 \cdot G \cdot I_a$$
 5.  **Euler Numerical Integration:** Accurately solves the equation of motion:
-    $$a = g - \frac{F_{brake} + F_{drag} + F_{friction}}{m}$$
+    $$a = -g + \frac{F_{brake} + F_{drag} + F_{friction}}{m}$$
     $$v_{next} = v + a \cdot dt_{sub}$$
     $$h_{next} = h + v \cdot dt_{sub}$$
 

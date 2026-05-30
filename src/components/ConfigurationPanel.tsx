@@ -24,7 +24,7 @@ export default function ConfigurationPanel({
   onToggle
 }: ConfigurationPanelProps) {
   const [localConfig, setLocalConfig] = useState(config);
-  
+
   const handleChange = (key: keyof SimulationConfig, value: number) => {
     if (isNaN(value)) return;
     setLocalConfig(prev => ({ ...prev, [key]: value }));
@@ -33,7 +33,7 @@ export default function ConfigurationPanel({
   const handleSoilTypeChange = (value: string) => {
     setLocalConfig(prev => ({ ...prev, soilType: value as any }));
   };
-  
+
   const handleSave = async () => {
     const isSuccess = await onConfigChange(localConfig);
 
@@ -41,11 +41,11 @@ export default function ConfigurationPanel({
       onToggle();
     }
   };
-  
+
   const handleResetConfig = async () => {
     await onReset();
   };
-  
+
   if (!isOpen) {
     return (
       <button
@@ -58,10 +58,10 @@ export default function ConfigurationPanel({
       </button>
     );
   }
-  
+
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4" onClick={onToggle}>
-      <div 
+      <div
         className="cyber-glass bg-slate-900/90 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto border border-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
@@ -84,7 +84,7 @@ export default function ConfigurationPanel({
             ×
           </button>
         </div>
-        
+
         {/* Configuration Form */}
         <div className="p-5 space-y-6">
           {/* Tamper Settings */}
@@ -93,7 +93,7 @@ export default function ConfigurationPanel({
               <span className="w-1.5 h-4 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]"></span>
               Tamper Dynamics
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -107,7 +107,7 @@ export default function ConfigurationPanel({
                   step="10"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Max Height (m)
@@ -120,7 +120,7 @@ export default function ConfigurationPanel({
                   step="1"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Gravity (m/s²)
@@ -155,7 +155,7 @@ export default function ConfigurationPanel({
               <span className="w-1.5 h-4 bg-amber-500 rounded-full shadow-[0_0_8px_#f59e0b]"></span>
               Soil Mechanics
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -187,14 +187,14 @@ export default function ConfigurationPanel({
               </div>
             </div>
           </div>
-          
+
           {/* Power System Settings */}
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
               <span className="w-1.5 h-4 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></span>
               Power Grids & Drive Systems
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -208,7 +208,7 @@ export default function ConfigurationPanel({
                   step="10"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Motor Drive Power (W)
@@ -221,7 +221,7 @@ export default function ConfigurationPanel({
                   step="10"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Motor Efficiency (%)
@@ -236,7 +236,7 @@ export default function ConfigurationPanel({
                   max="100"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Generator Efficiency (%)
@@ -279,14 +279,14 @@ export default function ConfigurationPanel({
               </div>
             </div>
           </div>
-          
+
           {/* Battery Settings */}
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-purple-400 flex items-center gap-2">
               <span className="w-1.5 h-4 bg-purple-500 rounded-full shadow-[0_0_8px_#8b5cf6]"></span>
               Accumulator System
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -301,7 +301,7 @@ export default function ConfigurationPanel({
                   <option className="bg-slate-900" value={48}>48V DC</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                   Initial Capacity (%)
@@ -319,7 +319,7 @@ export default function ConfigurationPanel({
             </div>
           </div>
         </div>
-        
+
         {/* Footer */}
         <div className="sticky bottom-0 bg-slate-950/50 backdrop-blur-md p-5 border-t border-slate-800/80 rounded-b-2xl">
           <div className="flex gap-3">
@@ -331,7 +331,7 @@ export default function ConfigurationPanel({
               <Save className="w-4 h-4" />
               {isSaving ? 'Saving...' : saveState === 'saved' ? 'Save Successfully' : saveState === 'error' ? 'Save Failed' : 'Save Configuration'}
             </button>
-            
+
             <button
               onClick={handleResetConfig}
               disabled={isSaving}

@@ -31,9 +31,9 @@ interface PitVisualizationProps {
   onCompactionClick?: () => void;
 }
 
-export default function PitVisualization({ 
-  height, 
-  state, 
+export default function PitVisualization({
+  height,
+  state,
   soilCompaction,
   soilDensity,
   impactCount,
@@ -112,15 +112,15 @@ export default function PitVisualization({
         };
     }
   })();
-  
+
   const tamperColor = stateMeta.color;
-  
+
   return (
     <div className={`relative flex h-auto flex-col rounded-2xl border text-slate-100 shadow-2xl cyber-glass border-slate-800 bg-slate-950/30 overflow-hidden`}>
       {/* Background glow highlights */}
       <div className={`absolute inset-0 transition-opacity duration-1000 ${is3d ? 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.08),transparent_40%)]' : 'bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.06),transparent_45%)]'}`} />
       <div className="absolute inset-0 opacity-15 bg-[linear-gradient(rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:40px_40px]" />
-      
+
       <div className="relative flex-[1.2] min-h-[320px] sm:min-h-[420px]">
         <svg
           viewBox={`0 0 ${sceneWidth} ${sceneHeight}`}
@@ -349,26 +349,26 @@ export default function PitVisualization({
         {/* Solar laser path wire */}
         <path d={`M 175 62 L 320 62 L ${bobX - 30} ${topAnchorY}`} fill="none" stroke="#1e293b" strokeWidth="2.5" />
         {state === 'CHARGING' && (
-          <path 
-            d={`M 175 62 L 320 62 L ${bobX - 30} ${topAnchorY}`} 
-            fill="none" 
-            stroke="#10b981" 
-            strokeWidth="2.5" 
-            strokeDasharray="8, 8" 
-            className="flow-solar" 
+          <path
+            d={`M 175 62 L 320 62 L ${bobX - 30} ${topAnchorY}`}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="2.5"
+            strokeDasharray="8, 8"
+            className="flow-solar"
           />
         )}
 
         {/* Battery laser path wire */}
         <path d={`M ${bobX + 30} ${topAnchorY} L 680 62 L 825 62`} fill="none" stroke="#1e293b" strokeWidth="2.5" />
         {state === 'DISCHARGING' && (
-          <path 
-            d={`M ${bobX + 30} ${topAnchorY} L 680 62 L 825 62`} 
-            fill="none" 
-            stroke="#3b82f6" 
-            strokeWidth="2.5" 
-            strokeDasharray="8, 8" 
-            className="flow-gen" 
+          <path
+            d={`M ${bobX + 30} ${topAnchorY} L 680 62 L 825 62`}
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth="2.5"
+            strokeDasharray="8, 8"
+            className="flow-gen"
             style={{ direction: 'rtl' }}
           />
         )}
@@ -397,7 +397,7 @@ export default function PitVisualization({
         />
 
         {/* Winch Pulley Wheel with spokes and rotation */}
-        <g 
+        <g
           className={state === 'CHARGING' ? 'animate-pulley-ccw' : state === 'DISCHARGING' ? 'animate-pulley-cw' : ''}
           style={{ transformOrigin: `${bobX}px ${topAnchorY}px` }}
         >
@@ -435,7 +435,7 @@ export default function PitVisualization({
             opacity="0.98"
             className="cursor-pointer"
             onClick={onTamperClick}
-            style={{ 
+            style={{
               filter: state === 'IMPACT' ? `drop-shadow(0 0 8px ${tamperColor})` : 'none',
               transition: 'stroke 0.3s ease, filter 0.3s ease'
             }}
@@ -471,7 +471,7 @@ export default function PitVisualization({
           <g>
             <ellipse cx={bobX + (is3d ? 10 : 0)} cy={groundY} rx="120" ry="24" fill="none" stroke="#f43f5e" strokeWidth="4" className="shockwave-anim" style={{ transformOrigin: `${bobX + (is3d ? 10 : 0)}px ${groundY}px` }} />
             <ellipse cx={bobX + (is3d ? 10 : 0)} cy={groundY} rx="120" ry="24" fill="none" stroke="#f43f5e" strokeWidth="2" className="shockwave-anim" style={{ transformOrigin: `${bobX + (is3d ? 10 : 0)}px ${groundY}px`, animationDelay: '0.2s' }} />
-            
+
             {/* Soil Ejecta Dust Sparks */}
             <g className="ejecta-l" style={{ transformOrigin: `${bobX - 20}px ${groundY - 10}px` }}>
               <circle cx={bobX - 30} cy={groundY - 8} r="5.5" fill="#b45309" />

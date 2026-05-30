@@ -139,7 +139,7 @@ export class ScenarioRunner {
   private onStateChange: ((state: string) => void) | null = null;
   private onComplete: (() => void) | null = null;
   private interval: NodeJS.Timeout | null = null;
-  
+
   public startScenario(
     scenario: Scenario,
     onStateChange: (state: string) => void,
@@ -151,7 +151,7 @@ export class ScenarioRunner {
     this.isRunning = true;
     this.onStateChange = onStateChange;
     this.onComplete = onComplete;
-    
+
     if (scenario.states.length === 0) {
       this.stop();
       onComplete();
@@ -159,15 +159,15 @@ export class ScenarioRunner {
     }
 
     onStateChange(scenario.states[0].state);
-    
+
     this.interval = setInterval(() => this.checkStateTransition(), 100);
   }
-  
+
   private checkStateTransition(): void {
     if (!this.currentScenario || !this.isRunning || !this.onStateChange) {
       return;
     }
-    
+
     const currentState = this.currentScenario.states[this.currentStateIndex];
 
     if (!currentState || typeof currentState.duration !== 'number' || !Number.isFinite(currentState.duration) || currentState.duration < 0) {
@@ -187,10 +187,10 @@ export class ScenarioRunner {
     }
 
     const elapsed = (Date.now() - this.stateStartTime) / 1000;
-    
+
     if (elapsed >= currentState.duration) {
       this.currentStateIndex++;
-      
+
       if (this.currentStateIndex >= this.currentScenario.states.length) {
         this.stop();
         if (this.onComplete) {
@@ -202,22 +202,22 @@ export class ScenarioRunner {
       }
     }
   }
-  
+
   public stop(): void {
     this.isRunning = false;
     this.currentScenario = null;
     this.currentStateIndex = 0;
-    
+
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
     }
   }
-  
+
   public getCurrentScenario(): Scenario | null {
     return this.currentScenario;
   }
-  
+
   public isScenarioRunning(): boolean {
     return this.isRunning;
   }
